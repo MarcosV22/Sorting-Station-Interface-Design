@@ -3,7 +3,7 @@
 > **Documento canônico:** Planejamento estratégico, priorização em níveis (P0 a P3), matriz de riscos e cronograma de implementação do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md) a [`docs/wiki/09-build-deploy.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/09-build-deploy.md).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`00-repository-inventory.md`](./00-repository-inventory.md) a [`09-build-deploy.md`](./09-build-deploy.md).
 
 ---
 
@@ -33,19 +33,28 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P0.1. Máquina de Estados Finita (FSM) da Engine de Bubble Sort
-- **Objetivo:** Implementar o modelo de domínio puro e a máquina de estados especificada em [`docs/wiki/04-sorting-engine.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/04-sorting-engine.md), isolando a lógica matemática do ciclo de renderização do React.
+- **Objetivo:** Implementar o modelo de domínio puro e a máquina de estados especificada em [`04-sorting-engine.md`](./04-sorting-engine.md), isolando a lógica matemática do ciclo de renderização do React.
 - **Valor para o Aluno:** Permite que cada ação do jogo reflita a lógica estrita da computação passo a passo.
-- **Dependências:** [`src/screens/GameScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx).
+- **Dependências:** [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx).
 - **Risco:** Aumento da complexidade da gestão de estado em relação ao protótipo imperativo.
-- **Critério de Aceite:** O estado mantém com precisão `passIndex`, `comparisonIndex`, `currentPair`, `swapsInCurrentPass` e emite eventos de transição puros.
-- **Status:** `EM PLANEJAMENTO`.
+- **Status:** `IMPLEMENTADO` (camada de domínio puro em `src/game/sorting/`).
 
 ---
 
-### P0.2. Rastreamento e Exibição de Passada Atual e Par Esperado
+### P0.2. Testes Automatizados da Bubble Sort Engine
+- **Objetivo:** Estabelecer infraestrutura de testes unitários com **Vitest** ([`src/game/sorting/bubbleSortEngine.test.ts`](../../src/game/sorting/bubbleSortEngine.test.ts)) cobrindo 15 grupos essenciais de comportamento: inicialização, par esperado, execução determinística, interação do usuário, passadas formais, invariantes de consolidação, histórico, imutabilidade e casos limítrofes (`[]`, `[42]`, `[1, 2, 3]`, duplicados e negativos).
+- **Valor para o Aluno e Pesquisa:** Garante integridade pedagógica absoluta e precisão matemática rigorosa, blindando o simulador contra regressões conceituais.
+- **Dependências:** P0.1.
+- **Risco:** Testar detalhes de implementação interna acoplados em vez de contratos da API pública (mitigado pelo foco em asserções contratuais).
+- **Critério de Aceite:** Suíte de 28 testes executando com 100% de aprovação via `pnpm run test:run` em ambiente headless.
+- **Status:** `IMPLEMENTADO`.
+
+---
+
+### P0.3. Rastreamento e Exibição de Passada Atual e Par Esperado
 - **Objetivo:** Indicar visualmente na interface qual é a passada em execução ($i$) e qual é o par mandatório sob escrutínio ($[j, j+1]$).
 - **Valor para o Aluno:** Elimina a confusão sobre onde focar a atenção e demonstra a varredura progressiva da esquerda para a direita.
-- **Dependências:** P0.1.
+- **Dependências:** P0.1, P0.2.
 - **Risco:** Poluição visual se os marcadores não respeitarem o Design System sci-fi.
 - **Critério de Aceite:** O par da vez recebe destaque luminoso na esteira e o cabeçalho exibe `PASSADA X DE Y` e `PAR [j, j+1]`.
 - **Status:** `EM PLANEJAMENTO`.
@@ -73,7 +82,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P0.5. Fixação Determinística de Elementos Ordenados (`sortedBoundary`)
-- **Objetivo:** Substituir a heurística falha de sufixo ordenado de [`GameScreen.tsx:L130-L136`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L130-L136) por um cálculo rigoroso: ao fim da passada $i$, o elemento na posição $n - 1 - i$ é definitivamente selado como `LOCKED`.
+- **Objetivo:** Substituir a heurística falha de sufixo ordenado de [`GameScreen.tsx`](../../src/screens/GameScreen.tsx) por um cálculo rigoroso: ao fim da passada $i$, o elemento na posição $n - 1 - i$ é definitivamente selado como `LOCKED`.
 - **Valor para o Aluno:** Materializa visualmente a principal propriedade do Bubble Sort: os maiores elementos "flutuam" e travam no final da lista.
 - **Dependências:** P0.1.
 - **Risco:** Marcar elementos como fixos antes de a passada formal ser completamente concluída.
@@ -83,7 +92,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P0.6. Cálculo Real de Progresso da Fase
-- **Objetivo:** Substituir a fórmula arbitrária baseada em trocas ([`GameScreen.tsx:L260`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L260)) pelo percentual exato de comparações completadas em relação ao total da fase.
+- **Objetivo:** Substituir a fórmula arbitrária baseada em trocas ([`GameScreen.tsx`](../../src/screens/GameScreen.tsx)) pelo percentual exato de comparações completadas em relação ao total da fase.
 - **Valor para o Aluno:** Fornece métrica transparente de evolução da fase que avança mesmo quando o par não precisa de troca.
 - **Dependências:** P0.1.
 - **Risco:** Nenhum.
@@ -93,9 +102,9 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P0.7. Correção do Bug de Animação de Permuta
-- **Objetivo:** Corrigir a condição em [`src/screens/GameScreen.tsx:L68`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L68) onde `setSelected(null)` precede o `setTimeout`, fazendo com que ambas as caixas recebam a classe de animação `"left"`.
+- **Objetivo:** Corrigir a condição em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) onde `setSelected(null)` precede o `setTimeout`, fazendo com que ambas as caixas recebam a classe de animação `"left"`.
 - **Valor para o Aluno:** Elimina o artefato visual confuso e restabelece a simetria física da troca (uma caixa move à esquerda e a outra à direita).
-- **Dependências:** [`src/components/NumberedBox.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/NumberedBox.tsx).
+- **Dependências:** [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx).
 - **Risco:** Baixo.
 - **Critério de Aceite:** A caixa da esquerda move-se para a direita com `animate-swap-right` e a da direita move-se para a esquerda com `animate-swap-left`.
 - **Status:** `EM PLANEJAMENTO`.
@@ -103,9 +112,9 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P0.8. Comportamento e Tela de Conclusão da Campanha (Fim da Fase 3)
-- **Objetivo:** Tratar o encerramento da última fase em [`src/App.tsx:L32`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L32), substituindo a repetição em loop da fase 3 por uma tela final de homologação técnica da estação.
+- **Objetivo:** Tratar o encerramento da última fase em [`src/App.tsx`](../../src/App.tsx), substituindo a repetição em loop da fase 3 por uma tela final de homologação técnica da estação.
 - **Valor para o Aluno:** Sensação de fechamento narrativo e recompensa pelo término de todo o treinamento.
-- **Dependências:** [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx), [`src/screens/ResultScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/ResultScreen.tsx).
+- **Dependências:** [`src/App.tsx`](../../src/App.tsx), [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx).
 - **Risco:** Baixo.
 - **Critério de Aceite:** Ao vencer a Fase 3, o botão "PRÓXIMA FASE" é substituído por "CONCLUIR PROTOCOLO", abrindo uma visão consolidada de todas as fases.
 - **Status:** `EM PLANEJAMENTO`.
@@ -117,7 +126,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P1.1. Tutorial Passo a Passo Interativo
-- **Objetivo:** Converter o atual tutorial automatizado por temporizadores ([`src/screens/TutorialScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/TutorialScreen.tsx)) em uma experiência guiada onde o usuário clica e executa as 3 primeiras trocas com instruções na tela.
+- **Objetivo:** Converter o atual tutorial automatizado por temporizadores ([`src/screens/TutorialScreen.tsx`](../../src/screens/TutorialScreen.tsx)) em uma experiência guiada onde o usuário clica e executa as 3 primeiras trocas com instruções na tela.
 - **Valor para o Aluno:** Aprendizado ativo imediato antes de ingressar na fase cronometrada.
 - **Dependências:** P0.1.
 - **Risco:** Sobrecarregar a tela de tutorial com texto excessivo.
@@ -139,7 +148,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ### P1.3. Replay da Partida e Linha do Tempo de Passos
 - **Objetivo:** Gravar a sequência de estados no array `history` da engine e oferecer na tela de resultado uma barra de reprodução (play, pause, passo anterior, próximo passo).
 - **Valor para o Aluno:** Permite que o estudante revise retrospectivamente onde errou ou como o vetor se estabilizou.
-- **Dependências:** P0.1, [`src/screens/ResultScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/ResultScreen.tsx).
+- **Dependências:** P0.1, [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx).
 - **Risco:** Consumo de memória caso o histórico não seja limpo entre fases.
 - **Critério de Aceite:** O aluno consegue retroceder qualquer fase passo a passo após sua conclusão.
 - **Status:** `EM PLANEJAMENTO`.
@@ -157,7 +166,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P1.5. Persistência Local Desacoplada (`localStorage`)
-- **Objetivo:** Implementar o schema e as funções de armazenamento local especificadas em [`docs/wiki/07-backend-and-persistence.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/07-backend-and-persistence.md).
+- **Objetivo:** Implementar o schema e as funções de armazenamento local especificadas em [`07-backend-and-persistence.md`](./07-backend-and-persistence.md).
 - **Valor para o Aluno:** Preserva o desbloqueio de fases, recordes e preferências sem perder o progresso ao fechar o navegador.
 - **Dependências:** P0.1.
 - **Risco:** Incompatibilidade em modo de navegação anônima (exige fallback gracioso em memória).
@@ -181,14 +190,14 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 > [!IMPORTANT]
 > **Princípio Inviolável:**  
 > **Algoritmos diferentes NÃO devem ser o mesmo gameplay renomeado.**  
-> Cada novo algoritmo deve introduzir metáforas diegéticas e mecânicas visuais exclusivas ([`docs/wiki/04-sorting-engine.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/04-sorting-engine.md)).
+> Cada novo algoritmo deve introduzir metáforas diegéticas e mecânicas visuais exclusivas ([`04-sorting-engine.md`](./04-sorting-engine.md)).
 
 ---
 
 ### P2.1. Protocolo Selection Sort: "Scanner de Carga Mínima"
 - **Objetivo:** Criar a engine e a tela do Selection Sort. O jogador não compara vizinhos: ele move um sensor pela partição desordenada, identifica o menor elemento e realiza uma única troca de longa distância para colocá-lo no início da esteira.
 - **Valor para o Aluno:** Compreensão da estratégia gulosa e da drástica redução no número de trocas em relação ao Bubble Sort.
-- **Dependências:** P0.1, [`docs/wiki/02-system-architecture.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/02-system-architecture.md).
+- **Dependências:** P0.1, [`02-system-architecture.md`](./02-system-architecture.md).
 - **Risco:** Reutilização indevida de componentes do Bubble Sort que quebrem a metáfora do scanner.
 - **Critério de Aceite:** A interface impede trocas adjacentes e exige a seleção do mínimo global antes da transferência para a partição ordenada.
 - **Status:** `FUTURO`.
@@ -198,7 +207,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ### P2.2. Protocolo Insertion Sort: "Desvio e Encaixe de Cargas"
 - **Objetivo:** Criar a engine e a tela do Insertion Sort. O jogador eleva uma carga da partição desordenada para um trilho superior e desloca os elementos maiores da partição já ordenada para abrir a vaga de inserção correta.
 - **Valor para o Aluno:** Assimilação táctil do conceito de subvetor incremental ordenado e deslocamento em cascata.
-- **Dependências:** P0.1, [`docs/wiki/02-system-architecture.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/02-system-architecture.md).
+- **Dependências:** P0.1, [`02-system-architecture.md`](./02-system-architecture.md).
 - **Risco:** Complexidade de animação CSS ao elevar pacotes e deslocar elementos vizinhos simultaneamente.
 - **Critério de Aceite:** A carga é inserida na lacuna correta após o deslocamento regressivo dos itens maiores.
 - **Status:** `FUTURO`.
@@ -240,7 +249,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P3.4. Backend Futuro Condicionado (Sob Demanda)
-- **Objetivo:** Desenvolver uma API e banco de dados centralizado **exclusivamente se houver necessidade comprovada** de contas de usuário, sincronização multi-dispositivo, rankings globais auditados ou painéis de gestão para professores ([`docs/wiki/07-backend-and-persistence.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/07-backend-and-persistence.md)).
+- **Objetivo:** Desenvolver uma API e banco de dados centralizado **exclusivamente se houver necessidade comprovada** de contas de usuário, sincronização multi-dispositivo, rankings globais auditados ou painéis de gestão para professores ([`07-backend-and-persistence.md`](./07-backend-and-persistence.md)).
 - **Valor para o Aluno:** Sincronização entre laboratório da faculdade e residência.
 - **Dependências:** Disparo formal de um dos gatilhos arquiteturais e aprovação de ADR.
 - **Risco:** Custo de hospedagem e overhead de infraestrutura sem base de usuários ativa.

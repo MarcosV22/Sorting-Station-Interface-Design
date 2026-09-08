@@ -3,7 +3,7 @@
 > **Documento canônico:** Especificação completa do Design System, identidade visual, linguagem de interação, catálogo de estilos e diretrizes de experiência do usuário (UX) do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md), [`docs/wiki/01-product-vision.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/01-product-vision.md), [`docs/wiki/03-frontend.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/03-frontend.md).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`00-repository-inventory.md`](./00-repository-inventory.md), [`01-product-vision.md`](./01-product-vision.md), [`03-frontend.md`](./03-frontend.md).
 
 ---
 
@@ -12,14 +12,14 @@
 O **Sorting Station** adota a estética **retrô-futurista de ficção científica industrial**, inspirada em centrais espaciais de transporte e terminais automatizados de logística pesada. Essa escolha visa transformar o aprendizado de algoritmos em uma experiência imersiva e lúdica, afastando o usuário tanto da aridez de testes acadêmicos em papel quanto da frieza de painéis analíticos corporativos.
 
 ### 1.1. A Metáfora Diegética: A "Central Logística v2.0"
-- **O Jogador como Operador Técnico:** O usuário assume o papel de operador de triagem em uma instalação de alta tecnologia responsável pelo roteamento de dados e pacotes energéticos ([`src/screens/HomeScreen.tsx:L70-L88`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/HomeScreen.tsx#L70-L88)).
+- **O Jogador como Operador Técnico:** O usuário assume o papel de operador de triagem em uma instalação de alta tecnologia responsável pelo roteamento de dados e pacotes energéticos ([`src/screens/HomeScreen.tsx`](../../src/screens/HomeScreen.tsx)).
 - **Cargas e Pacotes:** Os elementos do vetor matemático são representados como **caixas tecnológicas de carga** (`NumberedBox`), cada qual com seu número identificador em destaque e chaves secundárias de rastreamento.
 - **A Esteira Transportadora:** O meio físico por onde os dados trafegam é uma **esteira de roletes com trilhos energizados** (`.conveyor-track`), reforçando o senso cinético de movimento contínuo, proximidade física e ordem sequencial.
 - **A Linguagem de Terminal:** A comunicação do jogo adota o jargão de centros de controle industrial:
-  - `PROTOCOLO`: O algoritmo de ordenação em execução (ex.: `PROTOCOLO: BUBBLE` em [`src/components/PhaseHeader.tsx:L16`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/PhaseHeader.tsx#L16));
+  - `PROTOCOLO`: O algoritmo de ordenação em execução (ex.: `PROTOCOLO: BUBBLE` em [`src/components/PhaseHeader.tsx`](../../src/components/PhaseHeader.tsx));
   - `FASE`: O lote de cargas a ser organizado (Fase 1 de 3, Fase 2 de 3, etc.);
-  - `SISTEMA ATIVO`: A confirmação de telemetria operacional com badge pulsante verde ([`src/components/PhaseHeader.tsx:L32`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/PhaseHeader.tsx#L32));
-  - `INICIAR TURNO`: O comando para dar início à jornada de trabalho de triagem ([`src/screens/HomeScreen.tsx:L97`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/HomeScreen.tsx#L97)).
+  - `SISTEMA ATIVO`: A confirmação de telemetria operacional com badge pulsante verde ([`src/components/PhaseHeader.tsx`](../../src/components/PhaseHeader.tsx));
+  - `INICIAR TURNO`: O comando para dar início à jornada de trabalho de triagem ([`src/screens/HomeScreen.tsx`](../../src/screens/HomeScreen.tsx)).
 
 ---
 
@@ -27,7 +27,7 @@ O **Sorting Station** adota a estética **retrô-futurista de ficção científi
 
 O sistema visual é estruturado sobre uma base escura profunda enriquecida por focos de iluminação neon em ciano, roxo, âmbar e esmeralda.
 
-### 2.1. Tokens `@theme inline` ([`src/index.css:L14-L25`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L14-L25))
+### 2.1. Tokens `@theme inline` ([`src/index.css`](../../src/index.css))
 
 ```css
 @theme inline {
@@ -59,7 +59,7 @@ O sistema visual é estruturado sobre uma base escura profunda enriquecida por f
 
 ## 3. Tipografia do Sistema
 
-O projeto consome três famílias tipográficas importadas via Google Fonts ([`src/index.css:L1-L3`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L1-L3)), cada uma com função semântica rigorosa:
+O projeto consome três famílias tipográficas importadas via Google Fonts ([`src/index.css`](../../src/index.css)), cada uma com função semântica rigorosa:
 
 ```mermaid
 graph TD
@@ -94,18 +94,18 @@ graph TD
 
 ## 4. Efeitos Atmosféricos, Texturas e Animações
 
-O visual sci-fi repousa sobre uma camada de utilitários CSS implementados em [`src/index.css`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css):
+O visual sci-fi repousa sobre uma camada de utilitários CSS implementados em [`src/index.css`](../../src/index.css):
 
-### 4.1. `.scanlines` ([`src/index.css:L46-L56`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L46-L56))
+### 4.1. `.scanlines` ([`src/index.css`](../../src/index.css))
 Gera uma camada fixa semi-transparente que sobrepõe linhas horizontais alternadas de $2\text{px}$ sobre a tela (`linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%)`), simulando monitores antigos de tubo de raios catódicos (CRT) de bases espaciais. Possui `pointer-events: none` para não bloquear cliques.
 
-### 4.2. `.bg-grid` ([`src/index.css:L58-L69`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L58-L69))
+### 4.2. `.bg-grid` ([`src/index.css`](../../src/index.css))
 Desenha uma malha sutil quadriculada de $40\times 40\text{px}$ com cor `rgba(0, 245, 255, 0.04)`, conferindo a sensação de piso técnico ou planta de engenharia.
 
-### 4.3. `.panel-border` ([`src/index.css:L97-L104`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L97-L104))
+### 4.3. `.panel-border` ([`src/index.css`](../../src/index.css))
 Aplica borda translúcida ciano com cantos chanfrados e sombra difusa (`border border-cyan-500/20 shadow-[0_0_15px_rgba(0,245,255,0.05)]`), servindo de moldura para painéis de instrução e telemetria.
 
-### 4.4. A Esteira Mecânica (`.conveyor-track`) ([`src/index.css:L114-L125`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L114-L125))
+### 4.4. A Esteira Mecânica (`.conveyor-track`) ([`src/index.css`](../../src/index.css))
 A esteira usa uma imagem SVG embutida em base64 (`repeating-linear-gradient` com chevrons de roletes mecânicos) que desliza em loop contínuo através da animação `@keyframes conveyor`:
 ```css
 @keyframes conveyor {
@@ -114,19 +114,19 @@ A esteira usa uma imagem SVG embutida em base64 (`repeating-linear-gradient` com
 }
 ```
 
-### 4.5. Animações de Permuta (`animate-swap-left` e `animate-swap-right`) ([`src/index.css:L127-L145`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L127-L145))
+### 4.5. Animações de Permuta (`animate-swap-left` e `animate-swap-right`) ([`src/index.css`](../../src/index.css))
 Simulam o levantamento mecânico da caixa com translação horizontal e elevação vertical em arco:
 - **`swap-left`:** Move a caixa para a esquerda ($-100\%$) com ápice de $-12\text{px}$ em $50\%$ do tempo;
 - **`swap-right`:** Move a caixa para a direita ($+100\%$) com ápice de $-12\text{px}$ em $50\%$ do tempo.
 
-### 4.6. Pulsação de Foco (`animate-pulse-border`) ([`src/index.css:L147-L157`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L147-L157))
+### 4.6. Pulsação de Foco (`animate-pulse-border`) ([`src/index.css`](../../src/index.css))
 Oscila suavemente a opacidade da borda entre $0.4$ e $1.0$ e expande o brilho difuso para guiar o olhar do jogador até a caixa sob foco.
 
 ---
 
 ## 5. Catálogo de Componentes e Estados Visuais
 
-### 5.1. `NumberedBox` ([`src/components/NumberedBox.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/NumberedBox.tsx))
+### 5.1. `NumberedBox` ([`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx))
 
 A caixa possui cinco estados visuais claramente distintos:
 
@@ -148,7 +148,7 @@ Fundo card blue           Fundo âmbar translúcido   Fundo esmeralda translúci
 4. **Estado Desabilitado (`disabled={true}`):** Redução de opacidade (`opacity-40`) e cursor `not-allowed`.
 5. **Estado em Animação (`animating="left" | "right"`):** Aplicação de `animate-swap-left` ou `animate-swap-right` com elevação na camada (`z-20`).
 
-### 5.2. `GameButton` ([`src/components/GameButton.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/GameButton.tsx))
+### 5.2. `GameButton` ([`src/components/GameButton.tsx`](../../src/components/GameButton.tsx))
 
 | Variante | Aparência Normal | Efeito Hover / Foco | Uso Recomendado |
 | :--- | :--- | :--- | :--- |
@@ -157,7 +157,7 @@ Fundo card blue           Fundo âmbar translúcido   Fundo esmeralda translúci
 | **`danger`** | Borda vermelha `#ef4444`, fundo vermelho translúcido | Borda vermelha vibrante, sombra avermelhada | Reiniciar fase, abortar turno |
 | **`ghost`** | Fundo transparente, borda translúcida sutil | Borda ciano/branca nítida, fundo ciano/10 | Navegação para trás ("← VOLTAR") |
 
-### 5.3. `InstructionPanel` ([`src/components/InstructionPanel.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/InstructionPanel.tsx))
+### 5.3. `InstructionPanel` ([`src/components/InstructionPanel.tsx`](../../src/components/InstructionPanel.tsx))
 
 | Tipo | Ícone | Esquema Cromático | Cenário de Uso |
 | :--- | :--- | :--- | :--- |

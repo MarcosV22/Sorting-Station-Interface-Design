@@ -49,6 +49,6 @@
 ---
 
 ## 6. Links e Referências
-- **Código-fonte Afetado:** [`src/...`](file:///...)
-- **Documentos da Wiki Relacionados:** [`docs/wiki/...`](file:///...)
+- **Código-fonte Afetado:** [`src/...`](../../src/) ou `src/...`
+- **Documentos da Wiki Relacionados:** [docs/wiki/...](../wiki/)
 - **ADRs Anteriores / Sucessores:** [ADR-YYY]

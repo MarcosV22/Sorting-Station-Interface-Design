@@ -3,7 +3,7 @@
 > **Documento canônico:** Especificação técnica dos pipelines de compilação, empacotamento, distribuição e checklist pré-deploy do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`package.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json), [`vite.config.ts`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts), [`.figma/make/deploy`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/deploy), [`.figma/make/deploy-preview`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/deploy-preview), [`.figma/make/site.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/site.json).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`package.json`](../../package.json), [`vite.config.ts`](../../vite.config.ts), [`.figma/make/deploy`](../../.figma/make/deploy), [`.figma/make/deploy-preview`](../../.figma/make/deploy-preview), [`.figma/make/site.json`](../../.figma/make/site.json).
 
 ---
 
@@ -24,11 +24,11 @@ flowchart LR
 ## 2. Mecanismos de Compilação e Empacotamento
 
 ### 2.1. O Processo de Build do Vite (`vite build`)
-- **Comando do `package.json`:** `"build": "vite build"` ([`package.json:L8`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json#L8)).
+- **Comando do `package.json`:** `"build": "vite build"` ([`package.json`](../../package.json)).
 - **Pipeline de Transformação:**
   1. O Vite invoca o compilador esbuild para transpilar TypeScript e JSX em milissegundos;
-  2. O plugin `@tailwindcss/vite` processa a folha de estilos [`src/index.css`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css), resolvendo tokens `@theme inline` e gerando as classes utilitárias utilizadas;
-  3. O plugin `figmaSiteConfiguration` lê [`.figma/make/site.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/site.json) e injeta metadados e diretivas no HTML;
+  2. O plugin `@tailwindcss/vite` processa a folha de estilos [`src/index.css`](../../src/index.css), resolvendo tokens `@theme inline` e gerando as classes utilitárias utilizadas;
+  3. O plugin `figmaSiteConfiguration` lê [`.figma/make/site.json`](../../.figma/make/site.json) e injeta metadados e diretivas no HTML;
   4. O Rollup agrupa e minifica os scripts em blocos (*chunks*) com hash de conteúdo no nome para invalidação de cache do navegador.
 
 ### 2.2. A Estrutura do Diretório de Saída (`dist/`)
@@ -43,14 +43,14 @@ dist/
 ```
 
 ### 2.3. Pré-visualização Local dos Artefatos Compilados (`vite preview`)
-- **Comando do `package.json`:** `"preview": "vite preview"` ([`package.json:L9`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json#L9)).
+- **Comando do `package.json`:** `"preview": "vite preview"` ([`package.json`](../../package.json)).
 - Permite que o desenvolvedor execute um servidor HTTP leve apontando diretamente para a pasta `dist/`, reproduzindo exatamente o comportamento que a aplicação terá após ser empacotada.
 
 ---
 
 ## 3. Automação de Deploy no Figma Make
 
-A integração de publicação no Figma Make é controlada por dois scripts shell dedicados localizados em [`.figma/make/`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make):
+A integração de publicação no Figma Make é controlada por dois scripts shell dedicados localizados em [`.figma/make/`](../../.figma/make):
 
 ### 3.1. Script de Deploy de Produção (`.figma/make/deploy`)
 ```sh
@@ -74,10 +74,10 @@ tar -czf dist.tar.gz -C dist .
 
 ## 4. Configurações de Rede, Ambiente e SEO
 
-As diretrizes de rede e hospedagem são parametrizadas no [`vite.config.ts`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts) e em [`.figma/make/site.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/site.json):
+As diretrizes de rede e hospedagem são parametrizadas no [`vite.config.ts`](../../vite.config.ts) e em [`.figma/make/site.json`](../../.figma/make/site.json):
 
 ### 4.1. Resolução Dinâmica da Base (`base`)
-Em [`vite.config.ts:L43-L44`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L43-L44):
+Em [`vite.config.ts`](../../vite.config.ts):
 ```typescript
 base: process.env.FIGMA_PUBLIC_URL
   ? new URL(process.env.FIGMA_PUBLIC_URL).pathname
@@ -86,12 +86,12 @@ base: process.env.FIGMA_PUBLIC_URL
 Caso a aplicação seja servida sob um sub-caminho ou proxy reverso configurado pela plataforma (ex.: `/preview/abc123/`), o Vite ajusta automaticamente todos os caminhos relativos de tags `<script>` e `<link>` para apontar para esse pathname, impedindo falhas de carregamento 404 de assets.
 
 ### 4.2. Host e Porta de Execução
-Em [`vite.config.ts:L28-L30`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L28-L30):
+Em [`vite.config.ts`](../../vite.config.ts):
 - **Port:** `process.env.PORT || 8443` com `strictPort: true`. A porta fixa é mandatória para o roteamento do contêiner Figma Make.
 - **Host:** `process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0'`. Permite que o servidor de desenvolvimento aceite requisições vindas do host da máquina virtual.
 
 ### 4.3. Política de Sourcemaps por Ambiente
-Em [`vite.config.ts:L45`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L45):
+Em [`vite.config.ts`](../../vite.config.ts):
 ```typescript
 sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : false,
 ```
@@ -99,13 +99,13 @@ sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : false,
 - Em **build de produção**, os sourcemaps são desativados (`false`), reduzindo o tamanho final dos arquivos e protegendo os detalhes de implementação do código-fonte.
 
 ### 4.4. Diretiva de Indexação e Privacidade (`noindex`)
-No arquivo [`.figma/make/site.json:L3-L5`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/site.json#L3-L5):
+No arquivo [`.figma/make/site.json`](../../.figma/make/site.json):
 ```json
 "robots": {
   "index": false
 }
 ```
-O plugin customizado `figmaSiteConfiguration` lê essa propriedade e injeta no cabeçalho do `index.html` ([`vite.config.ts:L157-L162`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L157-L162)):
+O plugin customizado `figmaSiteConfiguration` lê essa propriedade e injeta no cabeçalho do `index.html` ([`vite.config.ts`](../../vite.config.ts)):
 ```html
 <meta name="robots" content="noindex, nofollow" />
 ```
@@ -148,7 +148,7 @@ Caso o projeto seja exportado para um repositório git externo (GitHub/GitLab) n
    - `pnpm run format` (checagem de estilo);
    - `npx tsc --noEmit` (verificação de tipos);
    - `pnpm run build` (garantia de compilação sem falhas);
-   - Execução da futura suíte de testes com Vitest ([`docs/wiki/08-testing-and-quality.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/08-testing-and-quality.md)).
+   - Execução da futura suíte de testes com Vitest ([`08-testing-and-quality.md`](./08-testing-and-quality.md)).
 2. **Ambientes de Staging / Preview por PR:**  
    Geração automática de URLs temporárias de pré-visualização (ex.: via Cloudflare Pages, Vercel ou Netlify) para cada funcionalidade em revisão por professores ou pesquisadores.
 3. **Monitoramento de Tamanho de Bundle (*Bundle Size Limit*):**  

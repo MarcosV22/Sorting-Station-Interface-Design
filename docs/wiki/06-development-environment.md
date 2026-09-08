@@ -3,7 +3,7 @@
 > **Documento canônico:** Guia operacional, especificação de infraestrutura, ciclo de vida do servidor, scripts e regras de conformidade técnica do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`package.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json), [`.mise.toml`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.mise.toml), [`vite.config.ts`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts), [`.figma/make/*`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`package.json`](../../package.json), [`.mise.toml`](../../.mise.toml), [`vite.config.ts`](../../vite.config.ts), [`.figma/make/*`](../../.figma/make).
 
 ---
 
@@ -15,7 +15,7 @@ O **Sorting Station** opera como uma aplicação web moderna conteinerizada dent
 
 ## 2. Toolchain e Gestão de Versões
 
-O projeto utiliza o arquivo de configuração [`.mise.toml`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.mise.toml) para fixar as versões exatas do runtime e do gerenciador de pacotes:
+O projeto utiliza o arquivo de configuração [`.mise.toml`](../../.mise.toml) para fixar as versões exatas do runtime e do gerenciador de pacotes:
 
 ```toml
 # .mise.toml
@@ -29,7 +29,7 @@ node = "22"
 
 ---
 
-## 3. Dependências do Projeto ([`package.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json))
+## 3. Dependências do Projeto ([`package.json`](../../package.json))
 
 ### 3.1. Dependências de Produção (Runtime)
 - **`react` (`^19.0.0`) & `react-dom` (`^19.0.0`):** Biblioteca declarativa de interfaces e renderizador DOM oficial na versão mais recente.
@@ -46,7 +46,7 @@ node = "22"
 
 ## 4. Scripts Operacionais do `package.json`
 
-O arquivo [`package.json:L6-L11`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json#L6-L11) expõe os comandos padrão:
+O arquivo [`package.json`](../../package.json) expõe os comandos padrão:
 
 | Comando | Execução | Propósito |
 | :--- | :--- | :--- |
@@ -59,9 +59,9 @@ O arquivo [`package.json:L6-L11`](file:///C:/Users/marcos.mendes/Downloads/Sorti
 
 ## 5. Arquitetura do Servidor no Figma Make
 
-No ecossistema do Figma Make, o servidor de desenvolvimento **já está em execução de forma contínua** ([`AGENTS.md:L7`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L7)). O desenvolvedor **não precisa nem deve** tentar iniciar o servidor manualmente com `npm run dev` em tarefas interativas normais.
+No ecossistema do Figma Make, o servidor de desenvolvimento **já está em execução de forma contínua** ([`AGENTS.md`](../../AGENTS.md)). O desenvolvedor **não precisa nem deve** tentar iniciar o servidor manualmente com `npm run dev` em tarefas interativas normais.
 
-### 5.1. Variáveis de Ambiente Críticas ([`vite.config.ts:L27-L37`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L27-L37))
+### 5.1. Variáveis de Ambiente Críticas ([`vite.config.ts`](../../vite.config.ts))
 
 ```typescript
 // vite.config.ts:L27-L37
@@ -87,9 +87,9 @@ server: {
 
 ## 6. Scripts e Configurações de `.figma/make/*`
 
-A pasta [`.figma/make/`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make) contém os pontos de integração direta com os ciclos de automação do Figma Make:
+A pasta [`.figma/make/`](../../.figma/make) contém os pontos de integração direta com os ciclos de automação do Figma Make:
 
-### 6.1. Monitoramento de Dependências: `dev.json` ([`.figma/make/dev.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/dev.json))
+### 6.1. Monitoramento de Dependências: `dev.json` ([`.figma/make/dev.json`](../../.figma/make/dev.json))
 ```json
 {
   "command": "pnpm run dev",
@@ -106,7 +106,7 @@ A diretiva `"installOn"` monitora alterações em `package.json` ou `pnpm-lock.y
 - **`.figma/make/langserver`:** Inicializa o servidor de linguagem TypeScript/JavaScript (`npx @vtsls/language-server --stdio`) para suporte de IntelliSense e autocompletion no editor embutido.
 - **`.figma/make/analyze-routes`:** Retorna um array JSON vazio `[]` indicando ao Figma Make que o projeto é uma SPA sem rotas de arquivo baseadas em páginas.
 
-### 6.3. Metadados e SEO em `site.json` ([`.figma/make/site.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/site.json))
+### 6.3. Metadados e SEO em `site.json` ([`.figma/make/site.json`](../../.figma/make/site.json))
 ```json
 {
   "title": "Click&Order",
@@ -119,21 +119,21 @@ A diretiva `"installOn"` monitora alterações em `package.json` ou `pnpm-lock.y
   }
 }
 ```
-- **`"robots": { "index": false }` (noindex):** Configuração obrigatória para evitar indexação pública em motores de busca (Google, Bing) durante os ciclos de desenvolvimento e prototipagem no Figma Make. O plugin `figmaSiteConfiguration` lê essa chave e injeta automaticamente `<meta name="robots" content="noindex, nofollow" />` no HTML ([`vite.config.ts:L157-L162`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L157-L162)).
+- **`"robots": { "index": false }` (noindex):** Configuração obrigatória para evitar indexação pública em motores de busca (Google, Bing) durante os ciclos de desenvolvimento e prototipagem no Figma Make. O plugin `figmaSiteConfiguration` lê essa chave e injeta automaticamente `<meta name="robots" content="noindex, nofollow" />` no HTML ([`vite.config.ts`](../../vite.config.ts)).
 
 ---
 
 ## 7. Plugins Exclusivos do Figma Make em `vite.config.ts`
 
-O arquivo [`vite.config.ts`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts) estende o Vite com 4 plugins customizados vitais para a plataforma:
+O arquivo [`vite.config.ts`](../../vite.config.ts) estende o Vite com 4 plugins customizados vitais para a plataforma:
 
-1. **`figmaSiteConfiguration()` ([`vite.config.ts:L73-L213`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L73-L213)):**  
+1. **`figmaSiteConfiguration()` ([`vite.config.ts`](../../vite.config.ts)):**  
    Lê `.figma/make/site.json` e substitui marcadores presentes em `index.html` (`<!-- figma:head-start -->`, `<!-- figma:body-end -->`, etc.) por tags meta, diretivas de robôs e scripts de acessibilidade.
-2. **`figmaErrorOverlayReplay()` ([`vite.config.ts:L215-L270`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L215-L270)):**  
+2. **`figmaErrorOverlayReplay()` ([`vite.config.ts`](../../vite.config.ts)):**  
    Captura erros de build e de tempo de execução (runtime errors) e os transmite via `postMessage` para a camada de visualização do Figma, permitindo que falhas sejam exibidas visualmente no painel do usuário.
-3. **`figmaReactRefreshBoundaryFallback()` ([`vite.config.ts:L272-L300`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L272-L300)):**  
+3. **`figmaReactRefreshBoundaryFallback()` ([`vite.config.ts`](../../vite.config.ts)):**  
    Intercepta erros de limite de atualização do React Fast Refresh, forçando um recarregamento completo da página se um componente quebrar durante a edição dinâmica.
-4. **`figmaMakeKitPlugin()` ([`vite.config.ts:L302-L352`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L302-L352)):**  
+4. **`figmaMakeKitPlugin()` ([`vite.config.ts`](../../vite.config.ts)):**  
    Injeta a biblioteca interna de suporte e utilitários da plataforma Figma Make.
 
 ---
@@ -142,34 +142,34 @@ O arquivo [`vite.config.ts`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20
 
 - **Diretório de Destino (`dist/`):**  
   A compilação de produção via `npm run build` gera a pasta `dist/` contendo arquivos estáticos com hashing para invalidação de cache (ex.: `assets/index-[hash].js`, `assets/index-[hash].css`) e `index.html`.
-- **Estratégia de Sourcemaps ([`vite.config.ts:L45`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L45)):**  
+- **Estratégia de Sourcemaps ([`vite.config.ts`](../../vite.config.ts)):**  
   ```typescript
   sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : false,
   ```
   Em ambiente de desenvolvimento e pré-visualização, os mapas de código são gerados como `inline` para permitir depuração direta das linhas de código TypeScript original no console do navegador. Em builds finais de produção, são desativados para máxima redução de peso dos pacotes.
-- **Path Alias `@/` ([`vite.config.ts:L39`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L39) e [`tsconfig.json:L15`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/tsconfig.json#L15)):**  
+- **Path Alias `@/` ([`vite.config.ts`](../../vite.config.ts) e [`tsconfig.json`](../../tsconfig.json)):**  
   O símbolo `@` mapeia de forma absoluta para a raiz do diretório `src/`, eliminando caminhos relativos frágeis (como `../../components/NumberedBox`).
 
 ---
 
 ## 9. Estilização Moderna: Tailwind CSS v4 sem Arquivos Legados
 
-O projeto utiliza o ecossistema do **Tailwind CSS v4** ([`AGENTS.md:L31-L35`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L31-L35)):
-- **Sem `tailwind.config.js`:** Toda a parametrização de cores e fontes é feita via `@theme inline` dentro de [`src/index.css:L14-L25`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L14-L25).
+O projeto utiliza o ecossistema do **Tailwind CSS v4** ([`AGENTS.md`](../../AGENTS.md)):
+- **Sem `tailwind.config.js`:** Toda a parametrização de cores e fontes é feita via `@theme inline` dentro de [`src/index.css`](../../src/index.css).
 - **Sem `postcss.config.js`:** O plugin `@tailwindcss/vite` processa a folha de estilos diretamente no pipeline do Vite, garantindo compilações instantâneas inferiores a 300ms.
-- **Entrada Única:** A folha [`src/index.css`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css) inicia com `@import url(...)` das fontes e `@import 'tailwindcss';` na linha 4.
+- **Entrada Única:** A folha [`src/index.css`](../../src/index.css) inicia com `@import url(...)` das fontes e `@import 'tailwindcss';` na linha 4.
 
 ---
 
-## 10. Regras de Código Mandatórias ([`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md))
+## 10. Regras de Código Mandatórias ([`AGENTS.md`](../../AGENTS.md))
 
 Para garantir a estabilidade do build e do interpretador JSX do Vite:
 
-1. **Strings e Apóstrofos ([`AGENTS.md:L39`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L39)):**  
+1. **Strings e Apóstrofos ([`AGENTS.md`](../../AGENTS.md)):**  
    Utilize sempre aspas duplas em strings literais que contenham apóstrofos (ex.: `"Don't do that"`, `"We're here"`). O uso de apóstrofo em aspas simples não escapadas (`'Don't'`) quebra o parser e interrompe a compilação.
-2. **Fechamento Estrito de Tags JSX e Chaves ([`AGENTS.md:L40`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L40)):**  
+2. **Fechamento Estrito de Tags JSX e Chaves ([`AGENTS.md`](../../AGENTS.md)):**  
    Todas as tags devem ser auto-fechadas (`<Component />`) ou fechadas explicitamente (`</Component>`), com balanceamento rigoroso de chaves `{}`.
-3. **Padrão Obrigatório de Exportação (`export default`) ([`AGENTS.md:L41`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L41)):**  
+3. **Padrão Obrigatório de Exportação (`export default`) ([`AGENTS.md`](../../AGENTS.md)):**  
    Todos os componentes React em `src/screens/` e `src/components/` devem ser exportados utilizando `export default function ComponenteName()`.
 
 ---
@@ -198,8 +198,8 @@ npx tsc --noEmit
 > [!CAUTION]
 > **Aviso de Preservação Estrutural:**  
 > Os seguintes arquivos e blocos de código são **essenciais para a operação da aplicação na infraestrutura do Figma Make**:
-> - Todos os scripts e arquivos de configuração contidos em [`.figma/make/*`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make) (`dev`, `install`, `format`, `deploy`, `deploy-preview`, `langserver`, `analyze-routes`, `dev.json`, `site.json`);
-> - As configurações de servidor (`port: 8443`, `strictPort: true`, `host: FIGMA_DEV_SERVER_HOST`, `hmr: FIGMA_PUBLIC_URL`) e os 4 plugins customizados (`figmaSiteConfiguration`, `figmaErrorOverlayReplay`, `figmaReactRefreshBoundaryFallback`, `figmaMakeKitPlugin`) em [`vite.config.ts`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts);
-> - As marcações de injeção `<!-- figma:* -->` em [`index.html`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/index.html).
+> - Todos os scripts e arquivos de configuração contidos em [`.figma/make/*`](../../.figma/make) (`dev`, `install`, `format`, `deploy`, `deploy-preview`, `langserver`, `analyze-routes`, `dev.json`, `site.json`);
+> - As configurações de servidor (`port: 8443`, `strictPort: true`, `host: FIGMA_DEV_SERVER_HOST`, `hmr: FIGMA_PUBLIC_URL`) e os 4 plugins customizados (`figmaSiteConfiguration`, `figmaErrorOverlayReplay`, `figmaReactRefreshBoundaryFallback`, `figmaMakeKitPlugin`) em [`vite.config.ts`](../../vite.config.ts);
+> - As marcações de injeção `<!-- figma:* -->` em [`index.html`](../../index.html).
 > 
 > **Estes componentes NUNCA devem ser removidos, renomeados ou simplificados** sem um motivo técnico formalmente documentado e aprovado. A exclusão de qualquer um deles resultará na perda de conexão com o painel de visualização e em falha imediata nos deploys do Figma Make.

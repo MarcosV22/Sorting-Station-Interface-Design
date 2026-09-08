@@ -3,34 +3,49 @@
 > **Documento canônico:** Diagnóstico da cobertura atual, estratégia de garantia da qualidade (QA), matriz de casos de teste pedagógicos e critérios de Definition of Done do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`package.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json), [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md), [`docs/wiki/02-system-architecture.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/02-system-architecture.md), [`docs/wiki/04-sorting-engine.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/04-sorting-engine.md).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`package.json`](../../package.json), [`00-repository-inventory.md`](./00-repository-inventory.md), [`02-system-architecture.md`](./02-system-architecture.md), [`04-sorting-engine.md`](./04-sorting-engine.md).
 
 ---
 
 ## 1. Estado Real dos Testes Automatizados Atuais
 
-Em conformidade estrita com o inventário técnico inicial do projeto ([`docs/wiki/00-repository-inventory.md:L166-L172`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md#L166-L172)):
+Com a conclusão da tarefa **P0.2**, a infraestrutura de testes automatizados de domínio puro do projeto foi estabelecida com sucesso:
 
-- **Inexistência de Frameworks de Teste:** O arquivo [`package.json`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json) **não contém nenhuma ferramenta de teste instalada** (como Vitest, Jest, Playwright, Cypress ou React Testing Library).
-- **Inexistência de Arquivos de Teste:** O repositório possui exatamente **0 arquivos de teste** (nenhum arquivo com extensão `*.test.*` ou `*.spec.*` e nenhum diretório `__tests__`).
-- **Inexistência de Script de Teste:** A seção `"scripts"` do [`package.json:L6-L11`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/package.json#L6-L11) define apenas `dev`, `build`, `preview` e `format`, sem entrada `"test"`.
-- **Mecanismos Atuais de Validação:** A garantia de qualidade atual repousa exclusivamente sobre:
-  1. Compilação TypeScript em modo estrito (`npx tsc --noEmit`);
-  2. Compilação de produção via Vite (`npm run build`);
-  3. Formatação estática de código via `oxfmt` (`npm run format`);
-  4. Testes manuais exploratórios conduzidos no preview do Figma Make.
+- **Framework de Testes Implementado:** **Vitest** (`vitest ^5.0.0`) instalado como dependência de desenvolvimento canônica via `pnpm add -D vitest`.
+- **Arquivos de Teste Ativos:** [`src/game/sorting/bubbleSortEngine.test.ts`](../../src/game/sorting/bubbleSortEngine.test.ts) (contendo **28 testes unitários** organizados em 15 grupos temáticos, com 100% de aprovação em ~340ms).
+- **Scripts de Teste Canônicos em [`package.json`](../../package.json):**
+  - `pnpm run test:run` (ou `npm run test:run`): Execução única headless da suíte completa;
+  - `pnpm test` (ou `npm test`): Modo watch interativo de desenvolvimento.
+- **Escopo Coberto Efetivamente:**
+  - **100% da Camada de Domínio Puro da Bubble Sort Engine ([`src/game/sorting/`](../../src/game/sorting/)):**
+    1. *Inicialização e cópia defensiva:* verificação de ponteiros, contadores zerados e imutabilidade de entrada;
+    2. *Par esperado:* cálculo determinístico de índices, valores e sinalizador de troca (`getExpectedComparison`);
+    3. *Passo algorítmico:* avanço sequencial da máquina de estados, permutações e conclusão (`executeBubbleSortStep`);
+    4. *Interação do jogador:* validação de `SWAP` vs. `KEEP`, garantindo que ações incorretas incrementem `errors` mas **NÃO avancem a FSM** nem modifiquem o vetor (`executeUserStep`);
+    5. *Passadas formais:* verificação da fórmula analítica $\sum_{i=1}^{n-1} i = \frac{n(n-1)}{2}$;
+    6. *Elementos consolidados:* conferência estrita de que caixas só são marcadas como travadas (`sortedBoundary`) ao término formal da respectiva passada, rejeitando heurísticas visuais precoces;
+    7. *Histórico sequencial:* registro estruturado de auditoria (`StepRecord`) em cada passo para futuro replay;
+    8. *Imutabilidade:* preservação de estados anteriores e integridade de objetos congelados (`Object.isFrozen`);
+    9. *Casos de borda:* vetor vazio `[]` e vetor unitário `[42]`;
+    10. *Vetor já ordenado:* `[1, 2, 3]` executando todas as passadas didáticas sem early exit silencioso;
+    11. *Estabilidade e casos especiais:* elementos duplicados `[3, 1, 3, 2]` e números negativos `[-5, 2, -10, 0]`;
+    12. *Determinismo e segurança:* reprodutibilidade idêntica e no-op seguro após conclusão.
+- **O que ainda NÃO possui testes automatizados:**
+  - Telas React ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx), [`HomeScreen.tsx`](../../src/screens/HomeScreen.tsx), etc.);
+  - Integração entre FSM e UI (pendente para as etapas P0.3+);
+  - Testes de acessibilidade (ARIA/teclado) e testes E2E.
 
 ---
 
-## 2. Estratégia de Qualidade Proposta `[PLANEJADO]`
+## 2. Estratégia de Qualidade Proposta
 
-Para elevar o projeto aos padrões de rigor exigidos tanto pela engenharia de software quanto pela futura pesquisa acadêmica, planeja-se uma **Pirâmide de Testes e Qualidade** dividida em quatro níveis:
+A Pirâmide de Qualidade do Sorting Station agora possui seus dois primeiros níveis operacionais:
 
 ```mermaid
 graph TD
-    subgraph Piramide_Qualidade ["Pirâmide de Garantia da Qualidade [PLANEJADA]"]
+    subgraph Piramide_Qualidade ["Pirâmide de Garantia da Qualidade"]
         N1["Nível 1: Checagem Estática & Tipagem\n(tsc, vite build, oxfmt) [ATIVO HOJE]"]
-        N2["Nível 2: Testes Unitários de Domínio da Engine\n(Funções puras, algoritmos, cálculos) [PLANEJADO]"]
+        N2["Nível 2: Testes Unitários de Domínio da Engine\n(Vitest: 28 testes em bubbleSortEngine.test.ts) [ATIVO HOJE]"]
         N3["Nível 3: Testes de Integração de FSM & Telas\n(Transições de estado, callbacks, fluxos) [PLANEJADO]"]
         N4["Nível 4: Acessibilidade, Responsividade & E2E\n(Teclado, reduced-motion, telas) [PLANEJADO]"]
 
@@ -41,14 +56,14 @@ graph TD
 ```
 
 > [!NOTE]
-> **Decisão Futura de Tooling:**  
-> A ferramenta recomendada para os Níveis 2 e 3 é o **Vitest** (por sua integração nativa com o Vite e velocidade) combinado com **@testing-library/react**. Nenhuma biblioteca será instalada nesta tarefa de documentação, constituindo um item do roadmap técnico planejado.
+> **Tooling de Teste Ativo:**  
+> O **Vitest** é o executor oficial de testes do projeto. Para os testes de componentes React dos Níveis 3 e 4, a introdução de bibliotecas como `@testing-library/react` permanece catalogada para quando o front-end for formalmente coberto.
 
 ---
 
 ## 3. Matriz de Casos de Teste Essenciais da Engine de Ordenação `[PLANEJADO]`
 
-Quando a engine de ordenação for desacoplada em TypeScript puro ([`docs/wiki/04-sorting-engine.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/04-sorting-engine.md)), os seguintes cenários de teste unitário devem ser implementados obrigatoriamente:
+Quando a engine de ordenação for desacoplada em TypeScript puro ([`04-sorting-engine.md`](./04-sorting-engine.md)), os seguintes cenários de teste unitário devem ser implementados obrigatoriamente:
 
 ### 3.1. Casos Limítrofes e Configurações de Vetor
 1. **Vetor Inversamente Ordenado (Pior Caso):**  
@@ -86,7 +101,7 @@ Quando a engine de ordenação for desacoplada em TypeScript puro ([`docs/wiki/0
 ## 4. Testes de Integração e Fluxo do Front-End `[PLANEJADO]`
 
 ### 4.1. Fluxo de Transição entre Telas
-Verificar se o chaveamento de `screen` em [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx) mantém a integridade do ciclo:
+Verificar se o chaveamento de `screen` em [`src/App.tsx`](../../src/App.tsx) mantém a integridade do ciclo:
 - `HomeScreen` $\xrightarrow{\text{onStart}}$ `TutorialScreen` $\xrightarrow{\text{onUnderstood}}$ `GameScreen` $\xrightarrow{\text{onComplete}}$ `ResultScreen`.
 - `ResultScreen` $\xrightarrow{\text{onRepeat}}$ recarrega a mesma fase com resultado limpo.
 - `ResultScreen` $\xrightarrow{\text{onNext}}$ incrementa a fase de 1 para 2, e de 2 para 3, com instâncias limpas via `key={'game-phase-${phase}'}`.
@@ -115,11 +130,11 @@ Para assegurar que qualquer nova contribuição mantenha a estabilidade técnica
 ---
 
 ### DoD 1 — Mudança de UI (Componentes, CSS, Estilos)
-- [ ] O componente segue o padrão obrigatório de **`export default`** ([`AGENTS.md:L41`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L41)).
-- [ ] Todas as tags JSX estão explicitamente fechadas e chaves balanceadas ([`AGENTS.md:L40`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L40)).
-- [ ] Strings literais contendo apóstrofos utilizam aspas duplas (ex.: `"Don't"`) ([`AGENTS.md:L39`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L39)).
+- [ ] O componente segue o padrão obrigatório de **`export default`** ([`AGENTS.md`](../../AGENTS.md)).
+- [ ] Todas as tags JSX estão explicitamente fechadas e chaves balanceadas ([`AGENTS.md`](../../AGENTS.md)).
+- [ ] Strings literais contendo apóstrofos utilizam aspas duplas (ex.: `"Don't"`) ([`AGENTS.md`](../../AGENTS.md)).
 - [ ] O componente não introduziu arquivos `tailwind.config.*` ou `postcss.config.*`.
-- [ ] A estilização respeita os tokens `@theme inline` e a tipografia estabelecida em [`docs/wiki/05-ux-design-system.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/05-ux-design-system.md).
+- [ ] A estilização respeita os tokens `@theme inline` e a tipografia estabelecida em [`05-ux-design-system.md`](./05-ux-design-system.md).
 - [ ] Elementos clicáveis possuem suporte a teclado (`tabIndex={0}`, `role="button"` ou tag `<button>`).
 - [ ] Não há quebra de layout em resoluções de desktop ($\ge 1024\text{px}$) e visualização de iframe no Figma Make.
 - [ ] `npm run build` compila sem erros (código de saída 0).
@@ -150,7 +165,7 @@ Para assegurar que qualquer nova contribuição mantenha a estabilidade técnica
 ---
 
 ### DoD 4 — Novo Algoritmo (Selection Sort, Insertion Sort, etc.)
-- [ ] O algoritmo possui **mecânica interativa dedicada**, sem copiar a esteira de permutas locais do Bubble Sort ([`docs/wiki/04-sorting-engine.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/04-sorting-engine.md)).
+- [ ] O algoritmo possui **mecânica interativa dedicada**, sem copiar a esteira de permutas locais do Bubble Sort ([`04-sorting-engine.md`](./04-sorting-engine.md)).
 - [ ] Foi implementada uma estratégia desacoplada compatível com a interface `SortingStrategy`.
 - [ ] O bloco de pseudocódigo correspondente foi redigido e sincronizado com os passos do novo protocolo.
 - [ ] Foram definidos os estados visuais específicos (ex.: scanner de mínimo no Selection Sort; pacote elevado no Insertion Sort).

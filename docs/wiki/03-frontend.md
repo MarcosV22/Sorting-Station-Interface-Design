@@ -3,7 +3,7 @@
 > **Documento canônico:** Guia técnico e manual prático de desenvolvimento da interface do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md), [`docs/wiki/02-system-architecture.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/02-system-architecture.md).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`00-repository-inventory.md`](./00-repository-inventory.md), [`02-system-architecture.md`](./02-system-architecture.md).
 
 ---
 
@@ -12,10 +12,10 @@
 O front-end do **Sorting Station** opera como uma Single Page Application (SPA) client-side desenvolvida com as seguintes ferramentas e padrões:
 
 - **React 19 (`^19.0.0`):** Utiliza componentes funcionais, hooks nativos (`useState`, `useEffect`, `useCallback`) e modo estrito de renderização (`React.StrictMode`).
-- **TypeScript 5.7 (`^5.7.0`):** Compilação com checagem estrita de tipos (`"strict": true`, `"noFallthroughCasesInSwitch": true` em [`tsconfig.json:L19-L20`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/tsconfig.json#L19-L20)).
-- **Vite 8 (`^8.0.5`):** Servidor de desenvolvimento rápido com Hot Module Replacement (HMR) e suporte aos plugins de sandbox do Figma Make ([`vite.config.ts:L19-L26`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L19-L26)).
-- **Tailwind CSS v4 (`^4.0.0`):** Configuração nativa via `@tailwindcss/vite`, sem arquivos legados `tailwind.config.js` ou `postcss.config.js`. Todo o tema é estendido via `@theme inline` dentro de [`src/index.css`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css).
-- **Path Alias `@/`:** Configurado tanto no Vite ([`vite.config.ts:L29`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/vite.config.ts#L29)) quanto no TypeScript ([`tsconfig.json:L15`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/tsconfig.json#L15)), permitindo imports absolutos como `@/components/GameButton` a partir de qualquer arquivo.
+- **TypeScript 5.7 (`^5.7.0`):** Compilação com checagem estrita de tipos (`"strict": true`, `"noFallthroughCasesInSwitch": true` em [`tsconfig.json`](../../tsconfig.json)).
+- **Vite 8 (`^8.0.5`):** Servidor de desenvolvimento rápido com Hot Module Replacement (HMR) e suporte aos plugins de sandbox do Figma Make ([`vite.config.ts`](../../vite.config.ts)).
+- **Tailwind CSS v4 (`^4.0.0`):** Configuração nativa via `@tailwindcss/vite`, sem arquivos legados `tailwind.config.js` ou `postcss.config.js`. Todo o tema é estendido via `@theme inline` dentro de [`src/index.css`](../../src/index.css).
+- **Path Alias `@/`:** Configurado tanto no Vite ([`vite.config.ts`](../../vite.config.ts)) quanto no TypeScript ([`tsconfig.json`](../../tsconfig.json)), permitindo imports absolutos como `@/components/GameButton` a partir de qualquer arquivo.
 
 ---
 
@@ -44,7 +44,7 @@ src/
 
 ## 3. Arquitetura de Telas e Navegação
 
-A navegação da aplicação não utiliza rotas de URL, mas sim uma máquina de telas baseada no estado `screen` mantido em [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx).
+A navegação da aplicação não utiliza rotas de URL, mas sim uma máquina de telas baseada no estado `screen` mantido em [`src/App.tsx`](../../src/App.tsx).
 
 ```mermaid
 flowchart LR
@@ -58,11 +58,11 @@ flowchart LR
 
 ### 3.1. `src/App.tsx` (Componente Raiz)
 - **Responsabilidades:**
-  - Armazenar o estado global de navegação (`screen`: `"home" | "tutorial" | "game" | "result"`) ([`src/App.tsx:L22`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L22));
-  - Armazenar o número da fase ativa (`phase`: `1 | 2 | 3`) ([`src/App.tsx:L23`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L23));
-  - Armazenar o último resultado recebido (`result`: `GameResult | null`) ([`src/App.tsx:L24`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L24));
-  - Definir a matriz de fases do Bubble Sort (`PHASES` em [`src/App.tsx:L9-L13`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L9-L13));
-  - Forçar a remontagem de `GameScreen` através da prop `key={'game-phase-${phase}'}` ([`src/App.tsx:L61`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L61)).
+  - Armazenar o estado global de navegação (`screen`: `"home" | "tutorial" | "game" | "result"`) ([`src/App.tsx`](../../src/App.tsx));
+  - Armazenar o número da fase ativa (`phase`: `1 | 2 | 3`) ([`src/App.tsx`](../../src/App.tsx));
+  - Armazenar o último resultado recebido (`result`: `GameResult | null`) ([`src/App.tsx`](../../src/App.tsx));
+  - Definir a matriz de fases do Bubble Sort (`PHASES` em [`src/App.tsx`](../../src/App.tsx));
+  - Forçar a remontagem de `GameScreen` através da prop `key={'game-phase-${phase}'}` ([`src/App.tsx`](../../src/App.tsx)).
 
 ### 3.2. `src/screens/HomeScreen.tsx`
 - **Responsabilidades:** Recepção do jogador, ambientação narrativa na "Central Logística v2.0" e chamada para ação.
@@ -75,7 +75,7 @@ flowchart LR
 ### 3.3. `src/screens/TutorialScreen.tsx`
 - **Responsabilidades:** Explicar o funcionamento elementar do Bubble Sort de forma visual e intuitiva antes do início do turno.
 - **Destaques de Implementação:**
-  - Mantém um `setInterval` de 3 segundos alternando um ciclo demonstrativo entre 3 estados: `"before" → "comparing" → "after"` ([`src/screens/TutorialScreen.tsx:L12-L21`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/TutorialScreen.tsx#L12-L21));
+  - Mantém um `setInterval` de 3 segundos alternando um ciclo demonstrativo entre 3 estados: `"before" → "comparing" → "after"` ([`src/screens/TutorialScreen.tsx`](../../src/screens/TutorialScreen.tsx));
   - Demonstra a comparação entre uma caixa de valor `8` e uma de valor `3`, ilustrando a necessidade de troca quando $8 > 3$;
   - Exibe cartões didáticos de regras operacionais ("1. Compare vizinhos", "2. Troque se fora de ordem", "3. Repita até estabilizar").
 - **Callbacks:** `onBack: () => void`, `onUnderstood: () => void`.
@@ -105,7 +105,7 @@ flowchart LR
 
 ## 4. Catálogo de Componentes Reutilizáveis (`src/components/`)
 
-### 4.1. `NumberedBox` ([`src/components/NumberedBox.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/NumberedBox.tsx))
+### 4.1. `NumberedBox` ([`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx))
 Representação visual das caixas transportadas pela esteira.
 
 ```typescript
@@ -126,7 +126,7 @@ interface NumberedBoxProps {
   - `sorted`: `border-emerald-400 bg-emerald-950/30 shadow-[0_0_12px_rgba(16,185,129,0.3)]`;
   - `default`: `border-cyan-500/40 bg-[#0d1635]/90 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,245,255,0.25)]`.
 
-### 4.2. `GameButton` ([`src/components/GameButton.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/GameButton.tsx))
+### 4.2. `GameButton` ([`src/components/GameButton.tsx`](../../src/components/GameButton.tsx))
 Botão com estética sci-fi e suporte a quatro variantes temáticas.
 
 ```typescript
@@ -146,7 +146,7 @@ interface GameButtonProps {
   - `"danger"`: Fundo vermelho translúcido `#ef4444`, texto `#fca5a5`;
   - `"ghost"`: Fundo transparente com borda translúcida ciano/branca.
 
-### 4.3. `InstructionPanel` ([`src/components/InstructionPanel.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/InstructionPanel.tsx))
+### 4.3. `InstructionPanel` ([`src/components/InstructionPanel.tsx`](../../src/components/InstructionPanel.tsx))
 Faixa horizontal de comunicação contextual com o usuário.
 
 ```typescript
@@ -162,7 +162,7 @@ interface InstructionPanelProps {
   - `"success"`: Ícone `✓`, borda esmeralda/40, texto `#a7f3d0`;
   - `"error"`: Ícone `✕`, borda vermelha/40, texto `#fecaca`.
 
-### 4.4. `PhaseHeader` ([`src/components/PhaseHeader.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/PhaseHeader.tsx))
+### 4.4. `PhaseHeader` ([`src/components/PhaseHeader.tsx`](../../src/components/PhaseHeader.tsx))
 Barra superior fixa contendo metadados operacionais da rodada.
 
 ```typescript
@@ -175,7 +175,7 @@ interface PhaseHeaderProps {
 
 - **Elementos renderizados:** Nome do protocolo em Orbitron ciano, pílulas circulares de progresso das fases e distintivo pulsante `"SISTEMA ATIVO"`.
 
-### 4.5. `StatsPanel` ([`src/components/StatsPanel.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/StatsPanel.tsx))
+### 4.5. `StatsPanel` ([`src/components/StatsPanel.tsx`](../../src/components/StatsPanel.tsx))
 Painel duplo de telemetria numérica.
 
 ```typescript
@@ -191,25 +191,25 @@ interface StatsPanelProps {
 
 | Componente / Tela | Caminho do Arquivo | Responsabilidade | Props Principais | Consumido Por |
 | :--- | :--- | :--- | :--- | :--- |
-| **`App`** | [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx) | Gerencia a máquina de estados global (`screen`, `phase`, `result`) e as fases | Nenhuma (Root) | [`src/main.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/main.tsx) |
-| **`HomeScreen`** | [`src/screens/HomeScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/HomeScreen.tsx) | Tela de apresentação temática e ponto de partida | `onStart`, `onHowToPlay` | [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx) |
-| **`TutorialScreen`** | [`src/screens/TutorialScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/TutorialScreen.tsx) | Demonstração animada e regras do Bubble Sort | `onBack`, `onUnderstood` | [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx) |
-| **`GameScreen`** | [`src/screens/GameScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx) | Gameplay interativo, seleção e lógica de ordenação | `initialArray`, `phase`, `onComplete` | [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx) |
-| **`ResultScreen`** | [`src/screens/ResultScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/ResultScreen.tsx) | Exibe pontuação, eficiência e pseudocódigo | `result`, `phase`, `totalPhases`, `onRepeat`, `onNext` | [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx) |
-| **`NumberedBox`** | [`src/components/NumberedBox.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/NumberedBox.tsx) | Caixa de carga numerada com estados visuais e animações | `value`, `index`, `selected`, `sorted`, `animating`, `onClick` | `GameScreen`, `TutorialScreen`, `ResultScreen` |
-| **`GameButton`** | [`src/components/GameButton.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/GameButton.tsx) | Botão sci-fi estilizado com 4 variantes visuais | `children`, `variant`, `size`, `disabled`, `onClick` | Todas as telas (`Home`, `Tutorial`, `Game`, `Result`) |
-| **`InstructionPanel`**| [`src/components/InstructionPanel.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/InstructionPanel.tsx) | Painel informativo com tipologia e ícones | `message`, `type` | `GameScreen`, `TutorialScreen` |
-| **`PhaseHeader`** | [`src/components/PhaseHeader.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/PhaseHeader.tsx) | Barra de topo com protocolo, fase e status | `protocol`, `phase`, `totalPhases` | `GameScreen`, `ResultScreen` |
-| **`StatsPanel`** | [`src/components/StatsPanel.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/StatsPanel.tsx) | Painel numérico de comparações e trocas | `comparisons`, `swaps` | `GameScreen` |
+| **`App`** | [`src/App.tsx`](../../src/App.tsx) | Gerencia a máquina de estados global (`screen`, `phase`, `result`) e as fases | Nenhuma (Root) | [`src/main.tsx`](../../src/main.tsx) |
+| **`HomeScreen`** | [`src/screens/HomeScreen.tsx`](../../src/screens/HomeScreen.tsx) | Tela de apresentação temática e ponto de partida | `onStart`, `onHowToPlay` | [`src/App.tsx`](../../src/App.tsx) |
+| **`TutorialScreen`** | [`src/screens/TutorialScreen.tsx`](../../src/screens/TutorialScreen.tsx) | Demonstração animada e regras do Bubble Sort | `onBack`, `onUnderstood` | [`src/App.tsx`](../../src/App.tsx) |
+| **`GameScreen`** | [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) | Gameplay interativo, seleção e lógica de ordenação | `initialArray`, `phase`, `onComplete` | [`src/App.tsx`](../../src/App.tsx) |
+| **`ResultScreen`** | [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx) | Exibe pontuação, eficiência e pseudocódigo | `result`, `phase`, `totalPhases`, `onRepeat`, `onNext` | [`src/App.tsx`](../../src/App.tsx) |
+| **`NumberedBox`** | [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx) | Caixa de carga numerada com estados visuais e animações | `value`, `index`, `selected`, `sorted`, `animating`, `onClick` | `GameScreen`, `TutorialScreen`, `ResultScreen` |
+| **`GameButton`** | [`src/components/GameButton.tsx`](../../src/components/GameButton.tsx) | Botão sci-fi estilizado com 4 variantes visuais | `children`, `variant`, `size`, `disabled`, `onClick` | Todas as telas (`Home`, `Tutorial`, `Game`, `Result`) |
+| **`InstructionPanel`**| [`src/components/InstructionPanel.tsx`](../../src/components/InstructionPanel.tsx) | Painel informativo com tipologia e ícones | `message`, `type` | `GameScreen`, `TutorialScreen` |
+| **`PhaseHeader`** | [`src/components/PhaseHeader.tsx`](../../src/components/PhaseHeader.tsx) | Barra de topo com protocolo, fase e status | `protocol`, `phase`, `totalPhases` | `GameScreen`, `ResultScreen` |
+| **`StatsPanel`** | [`src/components/StatsPanel.tsx`](../../src/components/StatsPanel.tsx) | Painel numérico de comparações e trocas | `comparisons`, `swaps` | `GameScreen` |
 
 ---
 
 ## 6. Convenções de Código e Regras Obrigatórias
 
-O projeto está inserido no ambiente Figma Make e impõe diretrizes estritas documentadas em [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md):
+O projeto está inserido no ambiente Figma Make e impõe diretrizes estritas documentadas em [`AGENTS.md`](../../AGENTS.md):
 
 ### 6.1. Exportação Obrigatória por Padrão (`export default`)
-Todos os componentes React em `src/components/` e `src/screens/` **devem obrigatoriamente utilizar `export default`** ([`AGENTS.md:L41`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L41)):
+Todos os componentes React em `src/components/` e `src/screens/` **devem obrigatoriamente utilizar `export default`** ([`AGENTS.md`](../../AGENTS.md)):
 ```tsx
 // CORRETO:
 export default function NumberedBox(props: NumberedBoxProps) { ... }
@@ -219,7 +219,7 @@ export function NumberedBox(props: NumberedBoxProps) { ... }
 ```
 
 ### 6.2. Regra de Strings e Apóstrofos em JSX
-Para strings literais em JSX contendo apóstrofos (ex.: `"We're ready"`, `"Don't"`), **deve-se usar aspas duplas** ou a entidade HTML `&apos;` ([`AGENTS.md:L39`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L39)). O uso de aspas simples com apóstrofo não escapado quebra a compilação do Vite:
+Para strings literais em JSX contendo apóstrofos (ex.: `"We're ready"`, `"Don't"`), **deve-se usar aspas duplas** ou a entidade HTML `&apos;` ([`AGENTS.md`](../../AGENTS.md)). O uso de aspas simples com apóstrofo não escapado quebra a compilação do Vite:
 ```tsx
 // CORRETO:
 <p>"Don't touch that"</p>
@@ -230,26 +230,26 @@ Para strings literais em JSX contendo apóstrofos (ex.: `"We're ready"`, `"Don't
 ```
 
 ### 6.3. Fechamento Estrito de Tags e Chaves
-Todos os elementos JSX devem ter fechamento explícito (`<Component />` ou `<Component></Component>`) e chaves `{}` perfeitamente balanceadas ([`AGENTS.md:L40`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L40)).
+Todos os elementos JSX devem ter fechamento explícito (`<Component />` ou `<Component></Component>`) e chaves `{}` perfeitamente balanceadas ([`AGENTS.md`](../../AGENTS.md)).
 
 ---
 
 ## 7. Estilização: Tailwind CSS v4, Tema e Animações
 
 ### 7.1. Uso do Tailwind CSS v4
-- O projeto usa Tailwind CSS v4 via plugin oficial `@tailwindcss/vite` ([`AGENTS.md:L31-L35`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L31-L35)).
+- O projeto usa Tailwind CSS v4 via plugin oficial `@tailwindcss/vite` ([`AGENTS.md`](../../AGENTS.md)).
 - Todas as classes utilitárias devem ser aplicadas **diretamente nos atributos `className` do JSX**.
 - **Não crie** arquivos `tailwind.config.js` ou `postcss.config.js`.
 
 ### 7.2. Quando Usar `src/index.css`
-O arquivo [`src/index.css`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css) deve ser editado **apenas** para:
+O arquivo [`src/index.css`](../../src/index.css) deve ser editado **apenas** para:
 1. Importação de fontes web (`@import url(...)`);
 2. Importação do Tailwind (`@import 'tailwindcss';`);
 3. Declaração de tokens de tema com `@theme inline`;
 4. Regras `@keyframes` e classes utilitárias complexas com múltiplos pseudo-elementos (como `.scanlines`, `.conveyor-track`).
 
 ### 7.3. Tipografia do Projeto
-Definida no topo de [`src/index.css:L1-L3`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L1-L3):
+Definida no topo de [`src/index.css`](../../src/index.css):
 - **`'Orbitron', sans-serif`:** Títulos de tela, cabeçalhos de protocolos, números gigantes nas caixas e pontuações.
 - **`'Space Mono', monospace`:** Rótulos de métricas, etiquetas técnicas (`PKG`, `SEL`, `OK`), botões operacionais e pseudocódigo.
 - **`'Exo 2', sans-serif`:** Textos descritivos, instruções didáticas, regras de tutorial e diálogos informativos.
@@ -271,9 +271,9 @@ Definida no topo de [`src/index.css:L1-L3`](file:///C:/Users/marcos.mendes/Downl
 | `.panel-border` | `border border-cyan-500/20 shadow-[0_0_15px_...]` | Borda padrão translúcida para painéis da central |
 
 ### 7.5. Animações Customizadas
-- **`@keyframes conveyor` ([`src/index.css:L106-L112`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L106-L112)):** Desloca o `background-position-x` em $-32\text{px}$ em loop contínuo de $2\text{s}$, simulando a esteira rolante mecânica.
-- **`@keyframes swap-left` / `@keyframes swap-right` ([`src/index.css:L127-L145`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L127-L145)):** Translação horizontal de $100\%$ acompanhada de arco vertical de elevação de $-12\text{px}$ na metade da animação ($50\%$), executada em $0.5\text{s}$ com curva `ease-in-out`.
-- **`@keyframes pulse-border` ([`src/index.css:L147-L157`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/index.css#L147-L157)):** Variação suave de opacidade de borda entre $0.4$ e $1.0$ para chamar a atenção para o elemento selecionado.
+- **`@keyframes conveyor` ([`src/index.css`](../../src/index.css)):** Desloca o `background-position-x` em $-32\text{px}$ em loop contínuo de $2\text{s}$, simulando a esteira rolante mecânica.
+- **`@keyframes swap-left` / `@keyframes swap-right` ([`src/index.css`](../../src/index.css)):** Translação horizontal de $100\%$ acompanhada de arco vertical de elevação de $-12\text{px}$ na metade da animação ($50\%$), executada em $0.5\text{s}$ com curva `ease-in-out`.
+- **`@keyframes pulse-border` ([`src/index.css`](../../src/index.css)):** Variação suave de opacidade de borda entre $0.4$ e $1.0$ para chamar a atenção para o elemento selecionado.
 
 ---
 
@@ -281,7 +281,7 @@ Definida no topo de [`src/index.css:L1-L3`](file:///C:/Users/marcos.mendes/Downl
 
 ### 8.1. Estado Atual
 - A interface foi construída tendo como alvo prioritário **resoluções desktop (largura $\ge 1024\text{px}$)**.
-- O layout centraliza a esteira transportadora com `flex gap-4 items-center justify-center` ([`src/screens/GameScreen.tsx:L186`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L186)).
+- O layout centraliza a esteira transportadora com `flex gap-4 items-center justify-center` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
 
 ### 8.2. Riscos de Quebra de Layout e Escalabilidade com Vetores Maiores
 - **Estouro Horizontal (*Horizontal Overflow*):** Na Fase 3 (6 caixas), a esteira ocupa aproximadamente $6 \times 80\text{px} + 5 \times 16\text{px} = 560\text{px}$ de largura líquida.
@@ -301,13 +301,13 @@ Em estrita consonância com a base de verdade do repositório, esta seção deta
 
 ### 9.2. Lacunas Críticas Identificadas
 1. **Caixas Numeradas não são Elementos Focáveis:**  
-   Em [`src/components/NumberedBox.tsx:L53`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/NumberedBox.tsx#L53), cada caixa é renderizada como uma `<div>` com evento `onClick`. Não possui `tabIndex={0}`, `role="button"` nem listener para teclas `Enter` ou `Space`. Usuários que navegam exclusivamente por teclado não conseguem selecionar as caixas na esteira.
+   Em [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx), cada caixa é renderizada como uma `<div>` com evento `onClick`. Não possui `tabIndex={0}`, `role="button"` nem listener para teclas `Enter` ou `Space`. Usuários que navegam exclusivamente por teclado não conseguem selecionar as caixas na esteira.
 2. **Ausência de Região Dinâmica (`aria-live`):**  
-   O componente [`InstructionPanel.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/InstructionPanel.tsx) atualiza mensagens de orientação dinamicamente, mas não possui o atributo `aria-live="polite"`. Leitores de tela não anunciam aos usuários deficientes visuais as mudanças de instrução decorrentes dos cliques.
+   O componente [`InstructionPanel.tsx`](../../src/components/InstructionPanel.tsx) atualiza mensagens de orientação dinamicamente, mas não possui o atributo `aria-live="polite"`. Leitores de tela não anunciam aos usuários deficientes visuais as mudanças de instrução decorrentes dos cliques.
 3. **Dependência Cromática de Estado:**  
    O estado de caixa ordenada (`sorted`) é transmitido primariamente pela cor verde da borda e badge "OK". Usuários com daltonismo severo podem ter dificuldade em diferenciar a borda verde (`sorted`) da borda ciano (`default`).
 4. **Preferência de Movimento Reduzido:**  
-   O arquivo [`.figma/make/site.json:L8`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/.figma/make/site.json#L8) possui `"ignoreReducedMotion": false`, porém o código CSS em `src/index.css` não encapsula as animações de esteira (`conveyor`) e de troca (`animate-swap-*`) dentro de uma media query `@media (prefers-reduced-motion: reduce)`.
+   O arquivo [`.figma/make/site.json`](../../.figma/make/site.json) possui `"ignoreReducedMotion": false`, porém o código CSS em `src/index.css` não encapsula as animações de esteira (`conveyor`) e de troca (`animate-swap-*`) dentro de uma media query `@media (prefers-reduced-motion: reduce)`.
 
 ---
 
@@ -382,7 +382,7 @@ export default function NovoComponente({ titulo, ativo = false }: NovoComponente
 
 ## 11. Anti-Padrões a Evitar
 
-1. ❌ **Exportações Nomeadas em Componentes:** Nunca use `export function Componente()`. Use sempre `export default function Componente()` ([`AGENTS.md:L41`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md#L41)).
+1. ❌ **Exportações Nomeadas em Componentes:** Nunca use `export function Componente()`. Use sempre `export default function Componente()` ([`AGENTS.md`](../../AGENTS.md)).
 2. ❌ **Criação de `tailwind.config.*` ou `postcss.config.*`:** O projeto usa Tailwind v4 através do Vite. Customizações de tema devem ir exclusivamente em `src/index.css` via `@theme inline`.
 3. ❌ **Strings em JSX com Apóstrofos Não Escapados:** Escrever `<p>'Don't do this'</p>` quebra a compilação do Vite. Use sempre `<p>"Don't do this"</p>`.
 4. ❌ **Acoplar Lógica Algorítmica em Manipuladores de Clique:** Novas regras ou algoritmos não devem ser escritos dentro de funções de clique do JSX; devem ser isolados em módulos ou funções puras.

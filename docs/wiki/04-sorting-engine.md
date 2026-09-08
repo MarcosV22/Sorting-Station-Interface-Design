@@ -3,25 +3,25 @@
 > **Documento canônico:** Especificação técnica e formal da lógica algorítmica, análise da engine atual de Bubble Sort, modelo formal da máquina de estados pedagógica e plano de expansão do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md), [`docs/wiki/02-system-architecture.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/02-system-architecture.md), [`docs/wiki/03-frontend.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/03-frontend.md).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`00-repository-inventory.md`](./00-repository-inventory.md), [`02-system-architecture.md`](./02-system-architecture.md), [`03-frontend.md`](./03-frontend.md).
 
 ---
 
 # PARTE A — ESTADO ATUAL (ANÁLISE DO PROTÓTIPO)
 
-Esta parte documenta a implementação fática da lógica de ordenação que se encontra atualmente no código-fonte, concentrada em [`src/screens/GameScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx), [`src/App.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx) e [`src/components/NumberedBox.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/components/NumberedBox.tsx).
+Esta parte documenta a implementação fática da lógica de ordenação que se encontra atualmente no código-fonte, concentrada em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx), [`src/App.tsx`](../../src/App.tsx) e [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx).
 
 ---
 
 ## 1. Funcionamento Passo a Passo da Lógica Atual
 
 ### 1.1. Seleção da Primeira Caixa
-- Quando o jogador clica em uma caixa da esteira e nenhuma caixa está selecionada (`selected === null`), a função `handleBoxClick(index)` salva o índice no estado `selected` ([`src/screens/GameScreen.tsx:L45-L49`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L45-L49)).
+- Quando o jogador clica em uma caixa da esteira e nenhuma caixa está selecionada (`selected === null`), a função `handleBoxClick(index)` salva o índice no estado `selected` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
 - A mensagem em `InstructionPanel` é atualizada para `"Caixa #X selecionada. Clique em uma caixa vizinha para comparar."` com tipo `"info"`.
-- A caixa ganha a classe visual de seleção (`border-amber-400` e animação `pulse-border`) via prop `selected={selected === index}` ([`src/screens/GameScreen.tsx:L196`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L196)).
+- A caixa ganha a classe visual de seleção (`border-amber-400` e animação `pulse-border`) via prop `selected={selected === index}` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
 
 ### 1.2. Cancelamento da Seleção
-- Se o usuário clicar novamente na mesma caixa já selecionada (`selected === index`), o manipulador cancela o foco, redefinindo `selected` para `null` e emitindo `"Seleção cancelada."` ([`src/screens/GameScreen.tsx:L51-L55`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L51-L55)).
+- Se o usuário clicar novamente na mesma caixa já selecionada (`selected === index`), o manipulador cancela o foco, redefinindo `selected` para `null` e emitindo `"Seleção cancelada."` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
 
 ### 1.3. Validação de Adjacência
 - Ao clicar em uma segunda caixa com índice diferente (`selected !== null && selected !== index`), o código verifica se a distância absoluta entre os índices é igual a $1$:
@@ -40,11 +40,11 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
 
 ### 1.4. Incremento do Contador de Comparações
 - Estando validada a adjacência, o par é normalizado em índices de esquerda e direita:
-  `left = Math.min(selected, index)` e `right = left + 1` ([`src/screens/GameScreen.tsx:L64-L65`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L64-L65)).
-- O contador de comparações é incrementado incondicionalmente: `setComparisons(comparisons + 1)` ([`src/screens/GameScreen.tsx:L67`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L67)).
+  `left = Math.min(selected, index)` e `right = left + 1` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
+- O contador de comparações é incrementado incondicionalmente: `setComparisons(comparisons + 1)` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
 
 ### 1.5. Troca Condicional (`boxes[left] > boxes[right]`)
-- **Se `boxes[left] > boxes[right]` ([`src/screens/GameScreen.tsx:L71-L87`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L71-L87)):**
+- **Se `boxes[left] > boxes[right]` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)):**
   - O estado `animating` é setado para `true`;
   - A mensagem exibe `"Trocando: X > Y — colocando em ordem crescente..."` com tipo `"success"`;
   - Dispara-se um `setTimeout` de $500\text{ms}$;
@@ -52,13 +52,13 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
   - O contador de trocas é incrementado: `setSwaps(swaps + 1)`;
   - `setBoxes(newBoxes)` e `setAnimating(false)` são executados;
   - Se `isSorted(newBoxes)` for verdadeiro, agenda-se a finalização da fase via callback `onComplete` após $400\text{ms}$.
-- **Se `boxes[left] <= boxes[right]` ([`src/screens/GameScreen.tsx:L89-L96`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L89-L96)):**
+- **Se `boxes[left] <= boxes[right]` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)):**
   - Nenhuma permuta é executada;
   - Exibe `"X ≤ Y — já estão na ordem correta!"` com tipo `"info"`;
   - Se `isSorted(boxes)` for verdadeiro, agenda-se `onComplete` após $400\text{ms}$.
 
 ### 1.6. Detecção de Vetor Ordenado
-- Avaliada pela função inlined `isSorted(arr)` ([`src/screens/GameScreen.tsx:L33-L35`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L33-L35)):
+- Avaliada pela função inlined `isSorted(arr)` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)):
   ```typescript
   function isSorted(arr: number[]): boolean {
     return arr.every((v, i) => i === 0 || arr[i - 1] <= v);
@@ -67,7 +67,7 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
 - Essa função simplesmente varre o vetor verificando monotonicidade não decrescente.
 
 ### 1.7. Sistema de Dica Atual
-- Implementado pela função `findNextSwap(arr)` ([`src/screens/GameScreen.tsx:L37-L41`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L37-L41)):
+- Implementado pela função `findNextSwap(arr)` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)):
   ```typescript
   function findNextSwap(arr: number[]): number | null {
     for (let i = 0; i < arr.length - 1; i++) {
@@ -76,13 +76,13 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
     return null;
   }
   ```
-- Ao clicar no botão "DICA" ([`src/screens/GameScreen.tsx:L110-L128`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L110-L128)), a busca encontra a **primeira inversão adjacente** da esquerda para a direita e preenche `hintPair = [idx, idx + 1]`. As caixas correspondentes recebem borda âmbar tracejada.
+- Ao clicar no botão "DICA" ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)), a busca encontra a **primeira inversão adjacente** da esquerda para a direita e preenche `hintPair = [idx, idx + 1]`. As caixas correspondentes recebem borda âmbar tracejada.
 
 ### 1.8. Reinício da Fase (`handleReset`)
-- Limpa o estado local e restaura o array a partir da prop: `setBoxes([...initialArray])` ([`src/screens/GameScreen.tsx:L99-L108`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L99-L108)). Zera `comparisons`, `swaps`, `selected` e `hintPair`.
+- Limpa o estado local e restaura o array a partir da prop: `setBoxes([...initialArray])` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)). Zera `comparisons`, `swaps`, `selected` e `hintPair`.
 
 ### 1.9. Cálculo de Progresso Atual
-- Exibido na barra de progresso da esteira ([`src/screens/GameScreen.tsx:L260`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L260)):
+- Exibido na barra de progresso da esteira ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)):
   ```typescript
   const progressPercent = Math.round(
     isSorted(boxes) ? 100 : (swaps / Math.max(swaps + 2, 4)) * 80
@@ -91,7 +91,7 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
 - **Limitação:** Trata-se de uma aproximação visual arbitrária que varia com a quantidade de trocas feitas, e não com o número de comparações completadas do algoritmo.
 
 ### 1.10. Marcação de Caixas Ordenadas (`OK`)
-- Calculada através de uma contagem de sufixo ordenado ([`src/screens/GameScreen.tsx:L130-L136`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L130-L136)):
+- Calculada através de uma contagem de sufixo ordenado ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)):
   ```typescript
   let sortedCount = 0;
   for (let i = boxes.length - 1; i >= 0; i--) {
@@ -102,11 +102,11 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
     }
   }
   ```
-- Cada caixa recebe `sorted={index >= boxes.length - sortedCount && isSorted(boxes.slice(index))}` ([`src/screens/GameScreen.tsx:L195`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L195)).
+- Cada caixa recebe `sorted={index >= boxes.length - sortedCount && isSorted(boxes.slice(index))}` ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
 - **Limitação:** Se o vetor for `[2, 4, 1, 5]`, o sufixo `[5]` é marcado como `OK`, mas se o vetor for acidentalmente `[1, 2, 4, 3]`, nenhum elemento é marcado mesmo que as primeiras posições já estivessem estáveis. A heurística não se baseia nas passadas reais do Bubble Sort.
 
 ### 1.11. Animação de Troca e Defeito Observado
-- Em [`src/screens/GameScreen.tsx:L68`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L68), `setSelected(null)` é invocado **antes** do `setTimeout` de $500\text{ms}$.
+- Em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx), `setSelected(null)` é invocado **antes** do `setTimeout` de $500\text{ms}$.
 - Como consequência, na linha 199:
   ```typescript
   animating={animating ? (index === selected ? "right" : "left") : null}
@@ -124,60 +124,109 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
 
 ---
 
-# PARTE B — ENGINE PEDAGÓGICA PLANEJADA (BUBBLE SORT)
+---
 
-Esta seção especifica formalmente a **Máquina de Estados Finita (FSM)** e o modelo de dados de domínio necessários para transformar o Bubble Sort em uma experiência pedagógica rigorosa e reprodutível.
+# PARTE B — ENGINE PEDAGÓGICA (BUBBLE SORT)
+
+Esta seção documenta a **camada de domínio puro da Engine de Bubble Sort** implementada em [`src/game/sorting/`](../../src/game/sorting/) e a **integração planejada com a interface gráfica** de [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx).
+
+> **Status de Implementação da Engine:**  
+> - **Camada de Domínio Puro (`src/game/sorting/`):** `IMPLEMENTADA` (P0.1 concluído com 100% de cobertura de tipos e testes funcionais).  
+> - **Integração com a Interface (`GameScreen.tsx`):** `EM PLANEJAMENTO` (P0.2 a P0.4).
 
 ---
 
-## 1. Modelo de Dados da Sessão (`BubbleSortState`) `[PLANEJADO]`
+## 1. Modelo de Dados da Sessão (`BubbleSortState`) `[IMPLEMENTADO]`
 
-A engine pedagógica deve encapsular todas as variáveis de estado algorítmico em uma estrutura imutável:
+A engine pedagógica encapsula todas as variáveis de estado algorítmico em estruturas imutáveis e puras ([`src/game/sorting/types.ts`](../../src/game/sorting/types.ts)):
 
 ```typescript
-// [PLANEJADO] Modelo de domínio da engine pedagógica do Bubble Sort
-interface BubbleSortSession {
-  // Dados fundamentais
-  readonly initialArray: readonly number[];
-  readonly currentArray: readonly number[];
-  readonly arrayLength: number;
+// [IMPLEMENTADO] Tipos e contratos de domínio em src/game/sorting/types.ts
+export type UserDecision = "SWAP" | "KEEP";
 
-  // Controle de ponteiros e laços
-  readonly passIndex: number;          // i: passada atual (0 <= i < n - 1)
-  readonly comparisonIndex: number;    // j: índice de comparação atual (0 <= j < n - 1 - i)
-  readonly currentPair: [number, number]; // [j, j + 1] - O par mandatório da vez
-  readonly sortedBoundary: number;     // Índice a partir do qual elementos estão fixados (n - i)
-  
-  // Telemetria e métricas operacionais
-  readonly totalComparisons: number;   // (n * (n - 1)) / 2 (pior caso / sem early exit)
-  readonly comparisonsCompleted: number; // Comparações válidas realizadas
-  readonly swaps: number;              // Total de permutas executadas
-  readonly swapsInCurrentPass: number; // Permutas na passada ativa (para early exit)
-  readonly errors: number;             // Ações fora do protocolo (cliques inválidos/decisões erradas)
-  readonly hintsUsed: number;          // Quantidade de dicas solicitadas
-  
-  // Estado e histórico
-  readonly status: PhaseStatus;        // Estado na máquina de estados
-  readonly history: readonly StepRecord[]; // Log imutável para replay
-  
-  // Mensagem contextual derivada
-  readonly message: {
-    readonly text: string;
-    readonly type: "info" | "warning" | "success" | "error";
-    readonly pseudocodeLine: number;
-  };
+export type BubbleSortStatus =
+  | "IN_PROGRESS"
+  | "PASS_COMPLETED"
+  | "COMPLETED";
+
+export interface StepRecord {
+  readonly stepNumber: number;
+  readonly passIndex: number;
+  readonly comparisonIndex: number;
+  readonly indices: readonly [number, number];
+  readonly valuesBefore: readonly number[];
+  readonly valuesAfter: readonly number[];
+  readonly leftValue: number;
+  readonly rightValue: number;
+  readonly swapped: boolean;
+  readonly explanation: string;
 }
 
-// [PLANEJADO] Estados operacionais da fase
-type PhaseStatus =
-  | "IDLE"                    // Aguardando início
-  | "AWAITING_PAIR_SELECTION" // Esperando o jogador clicar no par [j, j + 1]
-  | "AWAITING_DECISION"       // Par focado; aguardando decisão (Trocar vs. Manter)
-  | "ANIMATING_SWAP"          // Executando animação de permuta física
-  | "PASS_COMPLETED"          // Fim da passada; elemento final é fixado
-  | "EARLY_TERMINATION"       // Passada sem trocas; encerramento antecipado
-  | "PHASE_COMPLETED";        // Vetor totalmente ordenado
+export interface ExpectedComparison {
+  readonly passIndex: number;
+  readonly comparisonIndex: number;
+  readonly leftIndex: number;
+  readonly rightIndex: number;
+  readonly leftValue: number;
+  readonly rightValue: number;
+  readonly shouldSwap: boolean;
+  readonly explanation: string;
+}
+
+export interface BubbleSortState {
+  readonly initialValues: readonly number[];
+  readonly currentValues: readonly number[];
+  readonly arrayLength: number;
+  readonly passIndex: number;          // i: passada atual (0 <= i <= n - 2)
+  readonly comparisonIndex: number;    // j: par corrente (0 <= j <= n - 2 - i)
+  readonly comparisons: number;        // total de comparações formais
+  readonly swaps: number;              // total de trocas físicas
+  readonly swapsInCurrentPass: number; // trocas na passada ativa
+  readonly errors: number;             // decisões ou passos incorretos
+  readonly status: BubbleSortStatus;
+  readonly completed: boolean;
+  readonly sortedBoundary: number;     // índice a partir do qual caixas estão travadas
+  readonly history: readonly StepRecord[];
+}
+
+export interface UserStepResult {
+  readonly valid: boolean;
+  readonly state: BubbleSortState;
+  readonly expectedDecision: UserDecision;
+  readonly actualDecision: UserDecision;
+  readonly explanation: string;
+  readonly stepRecord?: StepRecord;
+}
 ```
+
+### 1.1. API Pública Disponível (`src/game/sorting/bubbleSortEngine.ts`) `[IMPLEMENTADA]`
+
+1. **`createBubbleSortState(values: readonly number[]): BubbleSortState`**  
+   Instancia a sessão com estado inicial imutável. Trata vetores vazios ou com 1 elemento como concluídos (`completed: true`, `sortedBoundary: 0`).
+2. **`getExpectedComparison(state: BubbleSortState): ExpectedComparison | null`**  
+   Calcula o par mandatório corrente $[j, j+1]$ e a expectativa algorítmica (`shouldSwap = leftValue > rightValue`). Retorna `null` se concluído.
+3. **`executeBubbleSortStep(state: BubbleSortState): BubbleSortState`**  
+   Executa deterministicamente o passo do algoritmo, permutando se necessário, registrando no histórico e atualizando os ponteiros e a fronteira `sortedBoundary`.
+4. **`executeUserStep(state: BubbleSortState, decision: UserDecision): UserStepResult`**  
+   Valida se a decisão do jogador (`SWAP` ou `KEEP`) corresponde à invariante do algoritmo. Se correta, avança a esteira; se incorreta, penaliza `errors` sem desviar o ponteiro.
+5. **`isBubbleSortComplete(state: BubbleSortState): boolean`**  
+   Informa se todas as passadas foram finalizadas.
+6. **`getSortedIndices(state: BubbleSortState): number[]`**  
+   Retorna a lista de índices das caixas já consolidadas (`LOCKED`).
+7. **`isIndexPermanentlySorted(state: BubbleSortState, index: number): boolean`**  
+   Verifica se um índice específico já atingiu sua posição definitiva.
+8. **`calculateTotalExpectedComparisons(arrayLength: number): number`**  
+   Retorna a soma de comparações da progressão aritmética $\frac{n(n-1)}{2}$.
+
+### 1.2. Decisão de Design: Variante Didática Previsível vs. Early Exit `[DECISÃO CANÔNICA]`
+
+A engine foi implementada intencionalmente sob a **variante canônica determinística de $n-1$ passadas completas**, sem término antecipado (*early exit*) silencioso.  
+- **Justificativa Pedagógica:** Assegura que o estudante compreenda plenamente o laço externo ($i$) e experimente o pior caso analítico sem variações ocultas de execução.
+- **Evolução Futura:** A inclusão de encerramento antecipado quando `swapsInCurrentPass === 0` está registrada como candidata a ADR formal para fases avançadas ou modos de desafio.
+
+---
+
+## 2. Diagrama de Transições da FSM `[PLANEJADO PARA INTEGRAÇÃO COM UI]`
 
 ---
 

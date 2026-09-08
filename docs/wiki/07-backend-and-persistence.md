@@ -3,7 +3,7 @@
 > **Documento canônico:** Diagnóstico de persistência, modelo de armazenamento local planejado, matriz de gatilhos operacionais e diretrizes para arquitetura futura de backend do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md), [`docs/wiki/01-product-vision.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/01-product-vision.md), [`docs/wiki/02-system-architecture.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/02-system-architecture.md).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`00-repository-inventory.md`](./00-repository-inventory.md), [`01-product-vision.md`](./01-product-vision.md), [`02-system-architecture.md`](./02-system-architecture.md).
 
 ---
 
@@ -39,8 +39,8 @@ flowchart LR
 
 ### 1.4. Como o Estado é Mantido Hoje
 - Todo o ciclo de dados vive **exclusivamente na memória volátil da aba do navegador** através de hooks `useState` do React:
-  - Em [`src/App.tsx:L22-L24`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L22-L24): variáveis `screen`, `phase` e `result`;
-  - Em [`src/screens/GameScreen.tsx:L21-L30`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L21-L30): variáveis locais `boxes`, `selected`, `comparisons`, `swaps`, `instruction`, `animating` e `hintPair`.
+  - Em [`src/App.tsx`](../../src/App.tsx): variáveis `screen`, `phase` e `result`;
+  - Em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx): variáveis locais `boxes`, `selected`, `comparisons`, `swaps`, `instruction`, `animating` e `hintPair`.
 
 ### 1.5. O que se Perde ao Recarregar a Página
 Caso o usuário atualize a página (F5 ou `Ctrl+R`), feche a aba ou reinicie o navegador:

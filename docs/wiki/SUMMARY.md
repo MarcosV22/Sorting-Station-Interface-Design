@@ -23,11 +23,11 @@ O projeto foi originalmente prototipado no ambiente **Figma Make**, evoluindo pa
 | Dimensão | Estado Real Implementado no Repositório |
 | :--- | :--- |
 | **Frontend** | React 19 (`^19.0.0`), TypeScript 5.7 strict, Vite 8 (`^8.2.2`), Tailwind CSS v4 inline (`@tailwindcss/vite`), Figma Make. |
-| **Gameplay** | Bubble Sort visual point-and-click com seleção livre de vizinhos; 3 fases progressivas (vetores de 4, 5 e 6 elementos). |
+| **Gameplay** | Bubble Sort visual point-and-click em `GameScreen.tsx`; **Engine pedagógica pura de Bubble Sort implementada em TypeScript em `src/game/sorting/` (P0.1 concluído; integração com UI pendente em P0.2 a P0.4)**; 3 fases progressivas (vetores de 4, 5 e 6 elementos). |
 | **Telas Existentes** | 4 telas ativas: `HomeScreen`, `TutorialScreen`, `GameScreen` e `ResultScreen` (chaveadas em `src/App.tsx`). |
 | **Backend** | **Inexistente.** Não há servidor de aplicação, microserviços, GraphQL ou endpoints REST. |
 | **Persistência** | **Inexistente.** Não há banco de dados nem armazenamento local (`localStorage` / `sessionStorage`). O estado é puramente volátil em memória. |
-| **Testes** | **Inexistentes.** Não há suíte automatizada de testes unitários, testes de integração ou testes E2E configurada no repositório. |
+| **Testes** | **Ativos para a Engine de Domínio.** Vitest (`vitest ^5.0.0`) instalado e operacional; 28 testes unitários passando 100% verde em [`src/game/sorting/bubbleSortEngine.test.ts`](../../src/game/sorting/bubbleSortEngine.test.ts) (**P0.2 concluído**). Testes de interface React e E2E permanecem planejados. |
 | **Outros Algoritmos** | Selection Sort, Insertion Sort, Merge Sort e Quick Sort são **estritamente planejados/futuros**. Não há implementação de código para eles. |
 
 ---
@@ -38,10 +38,10 @@ A prioridade **P0** central do projeto é:
 
 > **Transformar o gameplay de Bubble Sort atual em uma execução pedagógica estrita do algoritmo.**
 
-O jogador deve ser conduzido a seguir rigorosamente a sequência mecânica formal do Bubble Sort através de uma máquina de estados finita (FSM), implementando:
+Com a camada de domínio puro e a suíte completa de testes automatizados concluídas (**P0.1 e P0.2 concluídos** em [`src/game/sorting/`](../../src/game/sorting/)), as próximas etapas de P0 envolvem conectar essa lógica à interface:
 - Controle explícito de passada (`passIndex` de $0$ a $n-2$);
 - Controle do ponteiro interno de comparação (`comparisonIndex` de $0$ a $n - 2 - \text{passIndex}$);
-- Destaque mandatória do par de elementos esperado (`currentPair = [j, j+1]`);
+- Destaque mandatório do par de elementos esperado (`currentPair = [j, j+1]`);
 - Varredura determinística da esquerda para a direita na esteira;
 - Decisão consciente do jogador: acionar troca física (*Swap*) se fora de ordem ou confirmar manutenção (*Keep/Pass*) se em ordem;
 - Bloqueio de cliques fora do par ativo ou feedback explicativo formativo imediato;
@@ -51,11 +51,10 @@ O jogador deve ser conduzido a seguir rigorosamente a sequência mecânica forma
 - Conclusão correta e transparente de cada passada e da fase.
 
 ### Próximas 3 a 5 Tarefas Mais Importantes
-1. **Desacoplamento da Engine:** Isolar a lógica matemática da ordenação fora de `src/screens/GameScreen.tsx`, criando uma camada pura de FSM (`src/engine/`);
-2. **Implementação do Bubble Sort Estrito (FSM):** Introduzir ponteiros $i$ e $j$, seleção obrigatória do par corrente e bifurcação explícita *Trocar / Não Trocar*;
-3. **Correção do Bug de Animação de Troca:** Ajustar o ciclo de estado em `GameScreen.tsx` para garantir translação visual bidirecional (`left` e `right`);
-4. **Resolução do Encerramento da Fase 3:** Tratar o término da última fase em `src/App.tsx` para apresentar tela de vitória global da campanha ao invés de reiniciar a fase 3;
-5. **Introdução de Persistência Local Básica:** Configurar gravação de progresso e preferências do operador via `localStorage`.
+1. **Integração da Engine com a UI (P0.3/P0.4):** Conectar `src/game/sorting/` a `src/screens/GameScreen.tsx`, destacando o par mandatório corrente $[j, j+1]$ e adicionando a ação explícita *Trocar vs. Manter Ordem*;
+2. **Correção do Bug de Animação de Troca (P0.7):** Ajustar o ciclo de estado em `GameScreen.tsx` para garantir translação visual bidirecional (`left` e `right`);
+3. **Resolução do Encerramento da Fase 3:** Tratar o término da última fase em `src/App.tsx` para apresentar tela de vitória global da campanha ao invés de reiniciar a fase 3;
+4. **Introdução de Persistência Local Básica (P1):** Configurar gravação de progresso e preferências do operador via `localStorage`.
 
 ---
 
@@ -77,23 +76,26 @@ flowchart TD
     
     subgraph FrontendCurrent["Frontend React (Implementado)"]
         ReactUI["Interface de Telas (App.tsx)<br/>Home | Tutorial | Game | Result"]
-        GameState["Estado Volátil React (useState)<br/>boxes, selected, phase, metrics"]
+        GameState["Estado Local React (useState)<br/>boxes, selected, phase, metrics"]
     end
     
-    subgraph EnginePlanned["Camada de Algoritmos (PLANEJADA - P0)"]
-        SortingEngine["Sorting Engine Desacoplada (FSM Core)"]
-        BubbleSort["BubbleSortSession (Estrito)"]
-        OtherAlgorithms["Selection / Insertion / ... (Futuro)"]
+    subgraph EngineDomain["Camada de Domínio Puro (IMPLEMENTADA - P0.1)"]
+        SortingEngine["Sorting Engine Pura (src/game/sorting/)<br/>createBubbleSortState, executeBubbleSortStep"]
+        BubbleSort["BubbleSortState & FSM Canônica (n-1 passadas)"]
+    end
+
+    subgraph FutureAlgorithms["Outros Algoritmos (Planejados - P2)"]
+        OtherAlgorithms["Selection / Insertion (Futuro)"]
     end
 
     Browser --> ReactUI
     ReactUI --> GameState
-    GameState -.->|Refatoração P0| SortingEngine
+    GameState -.->|Integração Pendente (P0.2 a P0.4)| SortingEngine
     SortingEngine --> BubbleSort
     SortingEngine -.-> OtherAlgorithms
 ```
 
-> **Aviso de Arquitetura:** Atualmente, a lógica de ordenação está acoplada diretamente dentro do componente React [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx). A criação de uma `Sorting Engine` independente em TypeScript puro é uma meta **PLANEJADA (P0)** e ainda não está implementada no código atual.
+> **Aviso de Arquitetura:** A **camada de domínio puro** da Sorting Engine foi implementada em TypeScript desacoplado de React em [`src/game/sorting/`](../../src/game/sorting/) (**P0.1 concluído**). A **integração com a interface** dentro de [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) é a etapa **EM PLANEJAMENTO (P0.2 a P0.4)**.
 
 ---
 
@@ -188,8 +190,10 @@ Funcionalidades factuais e verificáveis em tempo de execução no repositório:
 - **`GameScreen`:** Esteira principal interativa com caixas numeradas, contadores de comparações/trocas, botão de dica, botão de reset e painel de instrução;
 - **`ResultScreen`:** Relatório de desempenho pós-fase exibindo estatísticas, barra visual de eficiência calculada, pseudocódigo estático do Bubble Sort e botões de repetir ou avançar;
 - **Componentes Reutilizáveis:** `NumberedBox`, `GameButton`, `InstructionPanel`, `PhaseHeader` e `StatsPanel`;
-- **Mecânica de Jogo Atual:** Seleção livre de qualquer par vizinho ($|i - j| = 1$), validação de ordem, troca física com animação de $500\text{ms}$ e detecção de vetor 100% ordenado;
-- **Fases Ativas:** 3 fases com vetores fixos: Fase 1 ($N=4$: `[5, 2, 4, 1]`), Fase 2 ($N=5$: `[7, 3, 9, 2, 5]`), Fase 3 ($N=6$: `[6, 1, 8, 4, 3, 7]`).
+- **Bubble Sort Pure Domain Engine (`src/game/sorting/`):** Módulo desacoplado de React com tipos estritos e funções puras (`createBubbleSortState`, `getExpectedComparison`, `executeBubbleSortStep`, `executeUserStep`, `getSortedIndices`, `isIndexPermanentlySorted`, `calculateTotalExpectedComparisons`), executando a variante canônica de $n-1$ passadas com suporte a histórico completo e validação de passos;
+- **Suíte de Testes Automatizados com Vitest (`src/game/sorting/bubbleSortEngine.test.ts`):** 28 testes unitários cobrindo 15 grupos rigorosos (inicialização, par esperado, passo a passo canônico, decisões SWAP/KEEP do jogador, invariantes de consolidação, passadas, histórico, imutabilidade e casos limítrofes `[]`, `[42]`, `[1, 2, 3]`, duplicados e negativos);
+- **Mecânica de Jogo Atual (UI):** Seleção livre de qualquer par vizinho ($|i - j| = 1$) em `GameScreen.tsx`, validação de ordem, troca física com animação de $500\text{ms}$ e detecção de vetor 100% ordenado;
+- **Fases Ativas:** 3 fases com vetores fixos: Fase 1 ($N=4$: `[5, 2, 4, 1]`), Fase 2 ($N=5$: `[6, 3, 8, 2, 5]`), Fase 3 ($N=6$: `[9, 1, 7, 4, 3, 6]`).
 
 ---
 
@@ -198,11 +202,13 @@ Funcionalidades factuais e verificáveis em tempo de execução no repositório:
 Funcionalidades já desenhadas e especificadas na Wiki para desenvolvimento nas próximas etapas:
 
 ### P0 (Fundação Pedagógica Imediata)
-- Engine pedagógica desacoplada com FSM determinística para Bubble Sort;
-- Ponteiros formais de laço ($i$ e $j$), varredura sequencial obrigatória da esquerda para a direita;
-- Ação explícita *Trocar / Não Trocar* e bloqueio de passos fora da ordem;
-- Travamento definitivo (`LOCKED`) de caixas ordenadas no final da esteira;
-- Correção da animação de swap bidirecional e tratamento do encerramento final da fase 3.
+- **P0.1 Concluído:** Camada de domínio pura do Bubble Sort implementada em `src/game/sorting/`;
+- **P0.2 Concluído:** Testes automatizados da Bubble Sort Engine com Vitest (28 testes unitários, 15 grupos);
+- **P0.3 (Pendente):** Rastreamento e exibição visual de passada atual e par esperado na esteira;
+- **P0.4 (Pendente):** Mecânica de decisão explícita: "Trocar" vs. "Manter Ordem";
+- **P0.5 (Pendente):** Bloqueio de ações fora de sequência e feedback explicativo formativo;
+- **P0.6 (Pendente):** Travamento determinístico dos elementos consolidados no final da esteira (`sortedBoundary`);
+- **P0.7 (Pendente):** Correção do bug de animação de swap bidirecional e tratamento do encerramento final da fase 3.
 
 ### P1 (Aperfeiçoamentos Pedagógicos e Persistência)
 - Tutorial interativo orientado a ações práticas do jogador;
@@ -283,13 +289,13 @@ Como ainda não foram realizados experimentos controlados com estudantes, qualqu
 
 Principais dívidas técnicas e pedagógicas registradas na Wiki:
 
-1. **Bubble Sort Não Estrito:** O protótipo permite ao jogador ordenar escolhendo qualquer par adjacente arbitrário, quebrando a fidelidade ao algoritmo formal (*Documentado em [04 — Sorting Engine](./04-sorting-engine.md)*);
+1. **Bubble Sort Não Estrito na UI:** A camada de domínio pura determinística já foi implementada em `src/game/sorting/` (P0.1), mas o componente visual `GameScreen.tsx` ainda opera com seleção livre até a conclusão da integração da interface (P0.2 a P0.4) (*Documentado em [04 — Sorting Engine](./04-sorting-engine.md)*);
 2. **Bug na Animação de Troca:** A chamada `setSelected(null)` antes do `setTimeout` em `GameScreen.tsx:L68` faz com que ambas as caixas recebam a classe de animação `left` (*Documentado em [02 — Arquitetura](./02-system-architecture.md)* e [04 — Sorting Engine](./04-sorting-engine.md)*);
 3. **Contador de Progresso Heurístico:** A lógica atual em `GameScreen.tsx:L130-L136` infere caixas ordenadas através de varredura sufixal arbitrária, e não pelo avanço real das passadas do algoritmo (*Documentado em [04 — Sorting Engine](./04-sorting-engine.md)*);
 4. **Marcação OK Heurística:** Caixas recebem borda verde quando estão localmente menores que a vizinha, mesmo fora de suas posições finais (*Documentado em [04 — Sorting Engine](./04-sorting-engine.md)*);
 5. **Pseudocódigo Estático:** O bloco de código exibido em `ResultScreen.tsx` é estático e não acompanha as ações do usuário em tempo real (*Documentado em [03 — Front-End](./03-frontend.md)*);
 6. **Encerramento da Última Fase:** Na fase 3, clicar em "Próxima Fase" reinicia a própria fase 3 devido a `Math.min(phase + 1, PHASES.length)` em `App.tsx:L32` (*Documentado em [02 — Arquitetura](./02-system-architecture.md)*);
-7. **Ausência Total de Testes:** Não existem testes automatizados para proteger a lógica matemática contra regressões (*Documentado em [08 — Qualidade e Testes](./08-testing-and-quality.md)*);
+7. **Ausência de Testes em Componentes React/UI:** A camada de domínio da Sorting Engine agora possui 100% de cobertura unitária com Vitest (**P0.2 concluído**), mas os componentes React e os fluxos visuais ainda não possuem testes automatizados (*Documentado em [08 — Qualidade e Testes](./08-testing-and-quality.md)*);
 8. **Volatilidade Total de Estado:** Recarregar a página apaga todo o histórico e progresso do jogador (*Documentado em [07 — Backend e Persistência](./07-backend-and-persistence.md)*).
 
 ---

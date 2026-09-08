@@ -3,7 +3,7 @@
 > **Documento canônico:** Visão de produto, proposta pedagógica, princípios de design e delimitação de escopo do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
 > **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/AGENTS.md), [`CLAUDE.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/CLAUDE.md), [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md).
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`docs/wiki/00-repository-inventory.md`](./00-repository-inventory.md).
 
 ---
 
@@ -11,7 +11,7 @@
 
 O **Sorting Station** é um jogo educacional *point-and-click* para navegadores web concebido para transformar o ensino e a aprendizagem de algoritmos de ordenação em uma experiência ativa, interativa e visualmente intuitiva. 
 
-Ambientado em uma central logística futurista de alta tecnologia ([`src/screens/HomeScreen.tsx:L70-L88`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/HomeScreen.tsx#L70-L88)), o jogo coloca o estudante no papel de um operador de triagem de cargas. O desafio proposto não é apenas "colocar números em ordem", mas sim **executar passo a passo o comportamento rigoroso do algoritmo ensinado**, integrando em tempo real:
+Ambientado em uma central logística futurista de alta tecnologia ([`src/screens/HomeScreen.tsx`](../../src/screens/HomeScreen.tsx)), o jogo coloca o estudante no papel de um operador de triagem de cargas. O desafio proposto não é apenas "colocar números em ordem", mas sim **executar passo a passo o comportamento rigoroso do algoritmo ensinado**, integrando em tempo real:
 
 $$\text{Ação do Jogador} \longrightarrow \text{Representação Visual} \longrightarrow \text{Execução do Algoritmo} \longrightarrow \text{Pseudocódigo Formal} \longrightarrow \text{Feedback Explicativo}$$
 
@@ -91,7 +91,7 @@ Esta é a distinção conceitual mais crítica de todo o projeto **Sorting Stati
 
 > [!IMPORTANT]
 > **Dívida Técnica do Protótipo Atual vs. Direção Futura:**  
-> Como registrado no inventário técnico ([`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md#L182-L188)), o protótipo atual de [`src/screens/GameScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L44-L97) ainda permite clicar em **qualquer par adjacente em qualquer ordem**.  
+> Como registrado no inventário técnico ([`docs/wiki/00-repository-inventory.md`](./00-repository-inventory.md)), o protótipo atual de [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) ainda permite clicar em **qualquer par adjacente em qualquer ordem**.  
 > A prioridade máxima planejada (**P0**) do projeto é substituir essa liberdade irrestrita por uma **máquina de estados pedagógica** que force o fluxo formal do Bubble Sort (passo a passo da esquerda para a direita).
 
 ---
@@ -121,18 +121,18 @@ O MVP foca especificamente no **Bubble Sort** com os seguintes objetivos de apre
 
 ## 10. Escopo do MVP (Estado Implementado Atual)
 
-Em conformidade com a base factual verificada em [`docs/wiki/00-repository-inventory.md`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/docs/wiki/00-repository-inventory.md):
+Em conformidade com a base factual verificada em [`docs/wiki/00-repository-inventory.md`](./00-repository-inventory.md):
 
-- **Telas:** Fluxo linear funcional `HomeScreen` → `TutorialScreen` → `GameScreen` → `ResultScreen` ([`src/App.tsx:L47-L77`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/App.tsx#L47-L77)).
+- **Telas:** Fluxo linear funcional `HomeScreen` → `TutorialScreen` → `GameScreen` → `ResultScreen` ([`src/App.tsx`](../../src/App.tsx)).
 - **Algoritmo:** Exclusivamente Bubble Sort ("Protocolo Bubble").
 - **Fases:** Três fases com configurações fixas de vetor:
   - Fase 1: `[5, 2, 4, 1]` (4 elementos)
   - Fase 2: `[6, 3, 8, 2, 5]` (5 elementos)
   - Fase 3: `[9, 1, 7, 4, 3, 6]` (6 elementos)
-- **Interação:** Seleção de caixas vizinhas por clique, com contagem em tempo real de comparações e trocas ([`src/screens/GameScreen.tsx:L44-L97`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L44-L97)).
+- **Interação:** Seleção de caixas vizinhas por clique, com contagem em tempo real de comparações e trocas ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
 - **Feedback:** Painel contextual com 4 tipologias visuais de instrução (`InstructionPanel.tsx`).
-- **Recursos de Apoio:** Sistema de dica local (`findNextSwap`) e reinício de fase ([`src/screens/GameScreen.tsx:L99-L128`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/GameScreen.tsx#L99-L128)).
-- **Encerramento:** Relatório de desempenho de fase com contadores, barra de eficiência e pseudocódigo com linha em destaque ([`src/screens/ResultScreen.tsx`](file:///C:/Users/marcos.mendes/Downloads/Sorting%20Station%20Interface%20Design/src/screens/ResultScreen.tsx)).
+- **Recursos de Apoio:** Sistema de dica local (`findNextSwap`) e reinício de fase ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx)).
+- **Encerramento:** Relatório de desempenho de fase com contadores, barra de eficiência e pseudocódigo com linha em destaque ([`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx)).
 
 ---
 
