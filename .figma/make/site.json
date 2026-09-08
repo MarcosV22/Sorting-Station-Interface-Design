@@ -1,0 +1,10 @@
+{
+  "description": "Engage in an educational web game that teaches sorting algorithms through interactive gameplay, enhancing problem-solving skills in a fun, futuristic setting.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

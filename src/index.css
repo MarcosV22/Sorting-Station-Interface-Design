@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+@theme inline {
+  --color-bg-deep: #060b1a;
+  --color-bg-mid: #0d1635;
+  --color-bg-panel: #111d42;
+  --color-cyan: #00f5ff;
+  --color-cyan-dim: #00b8c4;
+  --color-purple: #8b5cf6;
+  --color-purple-bright: #a78bfa;
+  --color-blue: #1e40af;
+  --color-blue-bright: #3b82f6;
+  --color-box-idle: #1a2a5e;
+  --color-box-selected: #00f5ff;
+  --color-box-border: #2a4a9e;
+  --font-display: 'Orbitron', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'Exo 2', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #060b1a;
+  color: #e2e8f0;
+  font-family: 'Exo 2', sans-serif;
+}
+
+/* Scanline overlay effect */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Glow effects */
+.glow-cyan {
+  text-shadow: 0 0 8px #00f5ff, 0 0 20px rgba(0, 245, 255, 0.4);
+}
+
+.glow-purple {
+  text-shadow: 0 0 8px #8b5cf6, 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.box-glow-selected {
+  box-shadow: 0 0 0 2px #00f5ff, 0 0 20px rgba(0, 245, 255, 0.5), 0 0 40px rgba(0, 245, 255, 0.2);
+}
+
+.box-glow-idle {
+  box-shadow: 0 0 0 1px rgba(42, 74, 158, 0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.box-glow-disabled {
+  box-shadow: 0 0 0 1px rgba(42, 74, 30, 0.4);
+}
+
+.panel-border {
+  border: 1px solid rgba(0, 245, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(0, 245, 255, 0.08), 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.5), 0 0 15px rgba(0, 245, 255, 0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0px);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  box-shadow: inset 0 1px 0 rgba(0, 245, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(0, 245, 255, 0.08);
+  border-color: rgba(0, 245, 255, 0.6);
+  box-shadow: 0 0 15px rgba(0, 245, 255, 0.15), inset 0 1px 0 rgba(0, 245, 255, 0.1);
+}
+
+.conveyor-track {
+  background: repeating-linear-gradient(
+    90deg,
+    #0d1635 0px,
+    #0d1635 18px,
+    #111d42 18px,
+    #111d42 20px
+  );
+  border-top: 2px solid rgba(0, 245, 255, 0.2);
+  border-bottom: 2px solid rgba(0, 245, 255, 0.2);
+}
+
+/* Box swap animation */
+@keyframes swap-left {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-110%) translateY(-8px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes swap-right {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(110%) translateY(-8px); }
+  100% { transform: translateX(0); }
+}
+
+.animate-swap-left {
+  animation: swap-left 0.5s ease-in-out;
+}
+
+.animate-swap-right {
+  animation: swap-right 0.5s ease-in-out;
+}
+
+/* Pulse animation for selected */
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 2px #00f5ff, 0 0 20px rgba(0, 245, 255, 0.5); }
+  50% { box-shadow: 0 0 0 2px #00f5ff, 0 0 30px rgba(0, 245, 255, 0.8), 0 0 50px rgba(0, 245, 255, 0.3); }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+/* Background grid */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Star field dots */
+.starfield {
+  background-image: radial-gradient(circle, rgba(0, 245, 255, 0.15) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Scrollbar hidden */
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; }
