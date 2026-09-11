@@ -39,6 +39,7 @@ export default function GameButton({
       className={`
         relative font-mono font-bold tracking-widest uppercase rounded
         cursor-pointer select-none
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060b1a]
         disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none
         ${sizeClasses[size]}
         ${variantClasses[variant]}

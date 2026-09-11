@@ -91,27 +91,38 @@ O modelo oficial de deliberação está versionado em [`docs/adr/TEMPLATE.md`](.
 
 ---
 
-## 4. Catálogo de Candidatos a ADR Futuro
+## 4. Registro de ADRs Aceitos
 
-As seguintes propostas de evolução estrutural estão documentadas como **candidatas formais**. Nenhuma delas deve ser tratada como previamente aprovada antes da abertura e aceite de seu respectivo ADR.
+### [ADR 0001: Integração da FSM Pura da Bubble Sort Engine com GameScreen e Modelo Decisório TROCAR/MANTER](../../docs/adr/0001-bubble-sort-fsm-ui-integration.md)
+- **Status:** `Aceito` (2026-09-10)
+- **Contexto:** Resolve formalmente os Candidatos 1 e 2. Elimina a lógica heurística imperativa de `GameScreen.tsx`, adota a Bubble Sort Engine pura (`src/game/sorting/`) como fonte única de verdade e implementa o modelo de decisão didático `[⇄ TROCAR]` vs `[= MANTER]`.
+- **Impacto:** Conclusão de P0.1, P0.2 e P0.3 com 31 testes automatizados passando.
+
+### [ADR 0002: Encerramento da Campanha Bubble Sort e Agregação de Resultados em Memória](../../docs/adr/0002-campaign-completion-memory-state.md)
+- **Status:** `Aceito` (2026-09-10)
+- **Contexto:** Resolve o bug de loop infinito na conclusão da Fase 3 em `src/App.tsx`, introduz a máquina de telas explícita com `CampaignCompleteScreen` e a camada pura de agregação em memória das métricas factuais das fases concluídas (`src/game/campaign/campaignSummary.ts`).
+- **Impacto:** Conclusão de P0.8 e finalização formal do Milestone P0 com 34 testes automatizados passando.
+
+### [ADR 0003: Separação entre Domínio Algorítmico Puro e Telemetria de Sessão (Dicas e Interação)](../../docs/adr/0003-session-metrics-engine-decoupling.md)
+- **Status:** `Aceito` (2026-09-10)
+- **Contexto:** Resolve a telemetria factual de P1.2. Mantém a Bubble Sort Engine (`src/game/sorting/`) puramente algorítmica (fonte canônica de `errors`), enquanto introduz a camada pura `src/game/session/sessionMetrics.ts` para rastreamento isolado de scaffolding/dicas (`hintsUsed`). Elimina a heurística de "Eficiência (%)" em `ResultScreen.tsx`.
+- **Impacto:** Conclusão de P1.2 com 45 testes automatizados passando.
+
+### [ADR 0004: Derivação Pura de Quadros de Replay da Execução a partir de StepRecord](../../docs/adr/0004-execution-replay-state-derivation.md)
+- **Status:** `Aceito` (2026-09-10)
+- **Contexto:** Resolve a reprodução retrospectiva passo a passo de P1.3. Introduz a camada pura `src/game/replay/replayModel.ts` que transforma deterministicamente o `initialValues` e o `history: readonly StepRecord[]` em quadros imutáveis (`ReplayFrame`), sem reexecução redundante do algoritmo. Introduz o quadro 0 (estado inicial), controles somente-leitura na `ReplayScreen` e botão `[ VER EXECUÇÃO ]` em `ResultScreen`.
+- **Impacto:** Conclusão de P1.3 com 54 testes automatizados passando e integridade absoluta das métricas da sessão.
+
+### [ADR 0005: Sincronização Pura de Pseudocódigo no Modo Replay da Execução](../../docs/adr/0005-replay-synchronized-pseudocode.md)
+- **Status:** `Aceito` (2026-09-10)
+- **Contexto:** Resolve a representação textual sincronizada de P1.4. Define a representação canônica imutável `BUBBLE_SORT_PSEUDOCODE` (9 instruções), a função de mapeamento puro `getPseudocodeHighlight(frame)` em `src/game/replay/replayPseudocode.ts` e o componente reutilizável `BubbleSortPseudocodePanel`. Separa rigorosamente a instrução abstrata genérica ($A[j] > A[j+1]$) da contextualização com valores concretos ($5 > 2 \rightarrow \text{VERDADEIRO}$).
+- **Impacto:** Conclusão de P1.4 com 63 testes automatizados passando, ausência de reexecução e sincronização perfeita em todos os controles de replay.
 
 ---
 
-### Candidato 1 — Desacoplamento da Engine de Ordenação em Relação à UI
-- **Contexto:** Atualmente, a lógica de ordenação e comparação vive emaranhada com `useState` e `setTimeout` dentro de [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx), impedindo testes unitários e reutilização de regras.
-- **Proposta sob Avaliação:** Extrair o domínio algorítmico para um módulo TypeScript independente (`src/engine/` ou `src/domain/`) contendo funções puras e tipos imutáveis.
-- **Alternativas a Ponderar:** Manter hooks customizados (`useSortingGame`) sem classes vs. instâncias puras de classes de domínio vs. Redux Toolkit.
-- **Impacto:** Alto. Requer refatoração segura da tela principal sem regressões visuais.
-- **Status:** `CANDIDATO PROPOSTO (P0)`.
+## 5. Catálogo de Candidatos a ADR Futuro
 
----
-
-### Candidato 2 — Máquina de Estados Finita (FSM) Pedagógica para o Bubble Sort
-- **Contexto:** O protótipo permite ao jogador clicar em qualquer par vizinho em qualquer ordem, descaracterizando o Bubble Sort estrito.
-- **Proposta sob Avaliação:** Adotar uma máquina de estados com controle estrito de `passIndex`, `comparisonIndex` e `currentPair`, bloqueando ações fora da passada e emitindo feedbacks educativos ([`04-sorting-engine.md`](./04-sorting-engine.md)).
-- **Alternativas a Ponderar:** FSM manual pura em TypeScript vs. biblioteca especializada (como XState).
-- **Impacto:** Alto. Central para a integridade pedagógica do jogo.
-- **Status:** `CANDIDATO PROPOSTO (P0)`.
+As seguintes propostas de evolução estrutural permanecem documentadas como **candidatas formais**:
 
 ---
 

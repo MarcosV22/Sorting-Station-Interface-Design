@@ -51,73 +51,63 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 
 ---
 
-### P0.3. Rastreamento e Exibição de Passada Atual e Par Esperado
-- **Objetivo:** Indicar visualmente na interface qual é a passada em execução ($i$) e qual é o par mandatório sob escrutínio ($[j, j+1]$).
-- **Valor para o Aluno:** Elimina a confusão sobre onde focar a atenção e demonstra a varredura progressiva da esquerda para a direita.
+### P0.3. Integração Completa da Engine com GameScreen (Passadas, Pares e Decisão TROCAR/MANTER)
+- **Objetivo:** Integrar a interface gráfica do `GameScreen` com a FSM da Bubble Sort Engine, exibindo a passada corrente ($i$), o par sob escrutínio ($[j, j+1]$) e oferecendo os botões `[⇄ TROCAR]` e `[= MANTER]`.
+- **Valor para o Aluno:** Ensina que a não-troca é uma decisão algorítmica fundamental e evidencia a varredura progressiva da esquerda para a direita.
 - **Dependências:** P0.1, P0.2.
 - **Risco:** Poluição visual se os marcadores não respeitarem o Design System sci-fi.
-- **Critério de Aceite:** O par da vez recebe destaque luminoso na esteira e o cabeçalho exibe `PASSADA X DE Y` e `PAR [j, j+1]`.
-- **Status:** `EM PLANEJAMENTO`.
-
----
-
-### P0.3. Mecânica de Decisão Explícita: "Trocar" vs. "Manter Ordem"
-- **Objetivo:** Adicionar botões ou gatilhos na esteira para que o jogador decida ativamente se o par focado deve ser trocado ($A[j] > A[j+1]$) ou mantido ($A[j] \le A[j+1]$).
-- **Valor para o Aluno:** Ensina que a não-troca é uma decisão algorítmica tão relevante quanto a troca.
-- **Dependências:** P0.1, P0.2.
-- **Risco:** Tornar o jogo mais lento se a interação exigir muitos cliques por par.
-- **Critério de Aceite:** O jogador consegue validar o par sem trocar quando a ordem já estiver correta, avançando o algoritmo sem gerar inconsistência.
-- **Status:** `EM PLANEJAMENTO`.
+- **Critério de Aceite:** O par da vez recebe destaque luminoso na esteira, o cabeçalho exibe `PASSADA X/Y` e `COMPARAÇÃO J/TOTAL (PAR #L E #R)`, e os botões `TROCAR` e `MANTER` validam o passo através de `executeUserStep`.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
 ### P0.4. Bloqueio de Ações Fora de Sequência e Feedback Explicativo
-- **Objetivo:** Impedir que o usuário clique em pares arbitrários e emitir avisos educativos explicando por que a ação violou o protocolo do Bubble Sort.
+- **Objetivo:** Impedir que o usuário avance ou altere posições fora do par determinístico do Bubble Sort, emitindo avisos educativos.
 - **Valor para o Aluno:** Protege o estudante contra a ilusão de que o algoritmo pode "adivinhar" ou pular elementos.
-- **Dependências:** P0.1.
+- **Dependências:** P0.1, P0.3.
 - **Risco:** Frustração do jogador caso o bloqueio não venha acompanhado de justificativa pedagógica amigável.
-- **Critério de Aceite:** Tentar clicar em caixas fora do par $[j, j+1]$ não altera o vetor e gera mensagem explicativa em `InstructionPanel`.
-- **Status:** `EM PLANEJAMENTO`.
+- **Critério de Aceite:** Tentar clicar em caixas fora do par ativo não altera o vetor e gera mensagem informativa no painel de instruções.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
 ### P0.5. Fixação Determinística de Elementos Ordenados (`sortedBoundary`)
-- **Objetivo:** Substituir a heurística falha de sufixo ordenado de [`GameScreen.tsx`](../../src/screens/GameScreen.tsx) por um cálculo rigoroso: ao fim da passada $i$, o elemento na posição $n - 1 - i$ é definitivamente selado como `LOCKED`.
+- **Objetivo:** Substituir a heurística falha de sufixo ordenado de [`GameScreen.tsx`](../../src/screens/GameScreen.tsx) por um cálculo rigoroso: ao fim da passada $i$, o elemento na posição $n - 1 - i$ é definitivamente consolidado.
 - **Valor para o Aluno:** Materializa visualmente a principal propriedade do Bubble Sort: os maiores elementos "flutuam" e travam no final da lista.
-- **Dependências:** P0.1.
+- **Dependências:** P0.1, P0.3.
 - **Risco:** Marcar elementos como fixos antes de a passada formal ser completamente concluída.
-- **Critério de Aceite:** Apenas caixas que passaram por toda a varredura e chegaram à sua posição definitiva recebem o badge verde `OK` e o estado bloqueado.
-- **Status:** `EM PLANEJAMENTO`.
+- **Critério de Aceite:** Apenas caixas consolidadas pela engine (`getSortedIndices`) recebem o badge verde `OK` e estado bloqueado.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
 ### P0.6. Cálculo Real de Progresso da Fase
-- **Objetivo:** Substituir a fórmula arbitrária baseada em trocas ([`GameScreen.tsx`](../../src/screens/GameScreen.tsx)) pelo percentual exato de comparações completadas em relação ao total da fase.
+- **Objetivo:** Substituir a fórmula arbitrária baseada em trocas pelo percentual exato de micro-passos completados em relação ao total teórico $\frac{n(n-1)}{2}$.
 - **Valor para o Aluno:** Fornece métrica transparente de evolução da fase que avança mesmo quando o par não precisa de troca.
-- **Dependências:** P0.1.
+- **Dependências:** P0.1, P0.3.
 - **Risco:** Nenhum.
 - **Critério de Aceite:** A barra de progresso atinge 100% exatamente quando a última comparação da última passada é concluída.
-- **Status:** `EM PLANEJAMENTO`.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
 ### P0.7. Correção do Bug de Animação de Permuta
-- **Objetivo:** Corrigir a condição em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) onde `setSelected(null)` precede o `setTimeout`, fazendo com que ambas as caixas recebam a classe de animação `"left"`.
+- **Objetivo:** Corrigir a condição em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) onde `setSelected(null)` precedia o `setTimeout`, fazendo com que ambas as caixas recebessem a classe de animação `"left"`.
 - **Valor para o Aluno:** Elimina o artefato visual confuso e restabelece a simetria física da troca (uma caixa move à esquerda e a outra à direita).
-- **Dependências:** [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx).
+- **Dependências:** [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx), P0.3.
 - **Risco:** Baixo.
 - **Critério de Aceite:** A caixa da esquerda move-se para a direita com `animate-swap-right` e a da direita move-se para a esquerda com `animate-swap-left`.
-- **Status:** `EM PLANEJAMENTO`.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
 ### P0.8. Comportamento e Tela de Conclusão da Campanha (Fim da Fase 3)
 - **Objetivo:** Tratar o encerramento da última fase em [`src/App.tsx`](../../src/App.tsx), substituindo a repetição em loop da fase 3 por uma tela final de homologação técnica da estação.
 - **Valor para o Aluno:** Sensação de fechamento narrativo e recompensa pelo término de todo o treinamento.
-- **Dependências:** [`src/App.tsx`](../../src/App.tsx), [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx).
+- **Dependências:** [`src/App.tsx`](../../src/App.tsx), [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx), [`src/screens/CampaignCompleteScreen.tsx`](../../src/screens/CampaignCompleteScreen.tsx).
 - **Risco:** Baixo.
-- **Critério de Aceite:** Ao vencer a Fase 3, o botão "PRÓXIMA FASE" é substituído por "CONCLUIR PROTOCOLO", abrindo uma visão consolidada de todas as fases.
-- **Status:** `EM PLANEJAMENTO`.
+- **Critério de Aceite:** Ao vencer a Fase 3, o botão "PRÓXIMA FASE" é substituído por "CONCLUIR PROTOCOLO", abrindo uma visão consolidada de todas as fases (`CampaignCompleteScreen`) com métricas globais factuais (3/3 fases, comparações e trocas totais acumuladas em memória).
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
@@ -126,46 +116,69 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P1.1. Tutorial Passo a Passo Interativo
-- **Objetivo:** Converter o atual tutorial automatizado por temporizadores ([`src/screens/TutorialScreen.tsx`](../../src/screens/TutorialScreen.tsx)) em uma experiência guiada onde o usuário clica e executa as 3 primeiras trocas com instruções na tela.
-- **Valor para o Aluno:** Aprendizado ativo imediato antes de ingressar na fase cronometrada.
-- **Dependências:** P0.1.
-- **Risco:** Sobrecarregar a tela de tutorial com texto excessivo.
-- **Critério de Aceite:** O tutorial só avança quando o aluno clica no par indicado pela instrução.
-- **Status:** `EM PLANEJAMENTO`.
+- **Objetivo:** Converter o antigo tutorial automatizado por temporizadores ([`src/screens/TutorialScreen.tsx`](../../src/screens/TutorialScreen.tsx)) em uma experiência interativa guiada sobre o vetor pedagógico `[3, 1, 2]`.
+- **Valor para o Aluno:** Aprendizado ativo por manipulação direta antes de ingressar no turno real: o aluno observa o par vizinho, decide entre `TROCAR` ou `MANTER`, visualiza a animação de swap simétrica, compreende a consolidação da passada e recebe feedback formativo imediato sem penalidades agressivas.
+- **Dependências:** P0.1, [`src/game/sorting/bubbleSortEngine.ts`](../../src/game/sorting/bubbleSortEngine.ts), [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx).
+- **Risco:** Sobrecarregar a tela de tutorial com texto excessivo (*mitigado com instruções curtas, micro-passos e cards objetivos*).
+- **Critério de Aceite:** O tutorial só avança quando o aluno toma a decisão correta para o par destacado; utiliza diretamente a Sorting Engine pura; apresenta o conceito de passada ao término da primeira varredura; oferece conclusão explícita com CTA "INICIAR FASE 1 →" e botão de reinício.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
-### P1.2. Sistema de Dica Contextual Baseado no Passo Atual
-- **Objetivo:** Fazer o botão "DICA" apontar a decisão correta para o par mandatória da vez ($[j, j+1]$), em vez de fazer uma busca linear pela primeira inversão do array.
-- **Valor para o Aluno:** Ajuda pontual e relevante sem quebrar o fluxo da passada.
-- **Dependências:** P0.1, P0.2.
-- **Risco:** Aluno usar dica em excesso sem tentar raciocinar.
-- **Critério de Aceite:** A dica destaca o par sob foco, exibe a relação de ordem ($A[j] > A[j+1]$ ou vice-versa) e incrementa `hintsUsed`.
-- **Status:** `EM PLANEJAMENTO`.
+### P1.2. Telemetria Pedagógica Local da Sessão e Dicas Contextuais
+- **Objetivo:** Registrar métricas factuais descritivas da experiência do operador (decisões incorretas `errors` canônicas da engine e dicas utilizadas `hintsUsed` da sessão), integrando-as ao resultado da fase e ao relatório global da campanha, eliminando métricas heurísticas arbitrárias (como "Eficiência %").
+- **Valor para o Aluno:** Transparência factual sobre sua trajetória na esteira ("O que aconteceu durante a sessão?") sem notas inventadas ou avaliações normativas artificiais.
+- **Dependências:** P0.1, P0.2, P0.8, [`src/game/session/sessionMetrics.ts`](../../src/game/session/sessionMetrics.ts), ADR 0003.
+- **Risco:** Confundir assistência didática com nota escolar (*mitigado pela apresentação estritamente descritiva dos dados*).
+- **Critério de Aceite:** Decisões incorretas provêm canonicamente de `gameState.errors`; dicas utilizadas são rastreadas via `sessionMetrics.hintsUsed` com guardas contra acionamento duplicado ou durante animações; `ResultScreen` e `CampaignCompleteScreen` apresentam as métricas factuais (comparações, trocas, erros, dicas) sem heurística arbitrária de eficiência; 45 testes automatizados aprovados.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
 ### P1.3. Replay da Partida e Linha do Tempo de Passos
-- **Objetivo:** Gravar a sequência de estados no array `history` da engine e oferecer na tela de resultado uma barra de reprodução (play, pause, passo anterior, próximo passo).
-- **Valor para o Aluno:** Permite que o estudante revise retrospectivamente onde errou ou como o vetor se estabilizou.
-- **Dependências:** P0.1, [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx).
-- **Risco:** Consumo de memória caso o histórico não seja limpo entre fases.
-- **Critério de Aceite:** O aluno consegue retroceder qualquer fase passo a passo após sua conclusão.
-- **Status:** `EM PLANEJAMENTO`.
+- **Objetivo:** Gravar a sequência de estados no array `history` da engine e oferecer na tela de resultado uma tela dedicada de replay com controles de reprodução (Passo 0 inicial, anterior, próximo, reproduzir com autoplay auto-stop, pausar e reiniciar).
+- **Valor para o Aluno:** Permite que o estudante revise retrospectivamente cada micro-passo executado, compreendendo as causas de cada troca (`SWAP`) e manutenção (`KEEP`) sem alterar métricas ou progresso.
+- **Dependências:** P0.1, [`src/game/replay/replayModel.ts`](../../src/game/replay/replayModel.ts), [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx), [`src/screens/ReplayScreen.tsx`](../../src/screens/ReplayScreen.tsx).
+- **Risco:** Consumo de memória caso o histórico não seja limpo entre fases (mitigado: memória volátil do ciclo de vida da fase em `App.tsx`).
+- **Critério de Aceite:** O aluno consegue retroceder qualquer fase passo a passo após sua conclusão via botão `[ VER EXECUÇÃO ]` na tela de resultados.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
-### P1.4. Destaque Dinâmico de Pseudocódigo em Tempo Real
-- **Objetivo:** Exibir o bloco de pseudocódigo em um painel lateral em `GameScreen.tsx`, iluminando a linha exata (ex.: `se A[j] > A[j+1] entao`) conforme o par é avaliado.
-- **Valor para o Aluno:** Conecta diretamente a ação física do mouse à sintaxe de programação.
-- **Dependências:** P0.1.
-- **Risco:** Redução do espaço horizontal em telas menores.
-- **Critério de Aceite:** Cada clique ou avanço de índice destaca a linha de pseudocódigo correspondente.
-- **Status:** `EM PLANEJAMENTO`.
+### P1.4. Pseudocódigo Sincronizado com o Replay
+- **Objetivo:** Adicionar ao `ReplayScreen` um painel de pseudocódigo canônico de Bubble Sort (`BubbleSortPseudocodePanel`) que destaque deterministicamente a instrução correspondente ao frame exibido (`INITIAL`, `KEEP`, `SWAP`).
+- **Valor para o Aluno:** Conecta diretamente a ação física/visual observada nas caixas à instrução formal do algoritmo sem alegar superioridade cognitiva não comprovada experimentalmente.
+- **Dependências:** P0.1, P1.3, [`src/game/replay/replayPseudocode.ts`](../../src/game/replay/replayPseudocode.ts), [`src/components/BubbleSortPseudocodePanel.tsx`](../../src/components/BubbleSortPseudocodePanel.tsx), ADR 0005.
+- **Risco:** Poluição visual ou competição com a esteira (mitigado por design escuro e sóbrio com rolagem vertical suave).
+- **Critério de Aceite:** O frame atual determina a linha iluminada em todos os controles de replay (`ANTERIOR`, `PRÓXIMO`, `AUTOPLAY`, `REINICIAR`); preservação do pseudocódigo genérico com contextualização separada de valores concretos; 63 testes automatizados aprovados.
+- **Status:** `IMPLEMENTADO`.
 
 ---
 
-### P1.5. Persistência Local Desacoplada (`localStorage`)
+### P1.5. Homologação e UX Polish do Protocolo Bubble
+- **Objetivo:** Realizar auditoria técnica e pedagógica transversal de ponta a ponta em todo o módulo Bubble Sort (`HomeScreen` $\rightarrow$ `TutorialScreen` $\rightarrow$ `GameScreen` $\rightarrow$ `ResultScreen` $\rightarrow$ `ReplayScreen` $\rightarrow$ `CampaignCompleteScreen`), refinando responsividade mobile, esteira contínua, acessibilidade, terminologia e carga cognitiva.
+- **Valor para o Aluno:** Experiência consistente, sem quebras na metáfora física da esteira (evitando wraps artificiais em telas estreitas com 6 caixas), foco visual limpo priorizando a tomada de decisão (`Ação Atual` $\rightarrow$ `Consequência` $\rightarrow$ `Contexto Algorítmico`) e total acessibilidade por teclado/leitores de tela.
+- **Destaques de Implementação:**
+  - **Esteira Contínua em Telas Estreitas:** Substituição do `flex-wrap` por contêiner com rolagem horizontal suave e controlada (`overflow-x-auto min-w-max`) em `GameScreen` e `ReplayScreen`, preservando a metáfora física da esteira com 4, 5 e 6 caixas da Fase 3 em qualquer viewport;
+  - **Acessibilidade Básica e Navegação por Teclado:** Elementos `<button>` nativos em `NumberedBox` e `GameButton` com anel de foco de alto contraste (`focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2`); `aria-label` descritiva em cada caixa de carga informando índice, valor e estado; `InstructionPanel` com `role="status"` e `aria-live="polite"`;
+  - **Redução de Carga Cognitiva:** Eliminação de índices duplicados em `ReplayScreen` (remoção da label `#` redundante sob a caixa); simplificação de explicações simultâneas;
+  - **Avaliação de Pseudocódigo no Gameplay:** Decisão formal documentada de manter o painel de pseudocódigo sincronizado exclusivamente no `ReplayScreen`, evitando sobrecarga da memória de trabalho e efeito de atenção dividida (*split-attention effect*) durante o gameplay ativo na esteira;
+  - **Unificação Terminológica e Pseudocódigo Canônico:** `ResultScreen` alinhado à representação canônica em português `BUBBLE_SORT_PSEUDOCODE`, com métricas descritivas da fase ("MÉTRICAS DA FASE" em vez de termos normativos de desempenho);
+  - **Suporte a Viewports Menores:** Rolagem vertical segura (`overflow-y-auto`) sem cortes de botões ou conteúdo em todas as 6 telas da aplicação.
+- **Dependências:** P0.1 a P0.8, P1.1 a P1.4.
+- **Risco:** Mínimo (modificações estritamente visuais, sem quebra de regras ou lógica algorítmica).
+- **Critério de Aceite:** 63 testes automatizados passando; compilação `tsc --noEmit` e build sem alertas; navegação fluida em telas estreitas com 6 caixas; acessibilidade por teclado funcional.
+- **Status:** `IMPLEMENTADO`.
+
+---
+
+> [!NOTE]
+> **Planejamento da Camada Narrativa (Narrative Layer):**  
+> A integração narrativa completa (personagens, diálogos, lore aprofundada da estação de triagem) constitui uma camada dedicada de produto que será desenvolvida em etapa futura, após a consolidação dos núcleos pedagógicos dos algoritmos. A terminologia padronizada no código e na interface (`estação`, `operador`, `cargas`, `protocolo`, `treinamento`, `turno`) foi validada como 100% compatível com a futura Narrative Layer, garantindo continuidade sem retrabalho.
+
+---
+
+### P1.6. Persistência Local Desacoplada (`localStorage`)
 - **Objetivo:** Implementar o schema e as funções de armazenamento local especificadas em [`07-backend-and-persistence.md`](./07-backend-and-persistence.md).
 - **Valor para o Aluno:** Preserva o desbloqueio de fases, recordes e preferências sem perder o progresso ao fechar o navegador.
 - **Dependências:** P0.1.
@@ -175,7 +188,7 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 
 ---
 
-### P1.6. Pontuação Pedagógica e Tempo como Recurso Secundário
+### P1.7. Pontuação Pedagógica e Tempo como Recurso Secundário
 - **Objetivo:** Estruturar um cálculo de pontuação baseado na precisão (mínimo de comparações e trocas desnecessárias, penalizando erros e dicas). O tempo transcorrido deve ser exibido como métrica secundária e puramente opcional, nunca punitiva.
 - **Valor para o Aluno:** Evita a ansiedade gerada por cronômetros decrescentes, priorizando a qualidade do raciocínio lógico.
 - **Dependências:** P0.1.

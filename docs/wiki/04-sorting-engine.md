@@ -131,8 +131,9 @@ Esta parte documenta a implementação fática da lógica de ordenação que se 
 Esta seção documenta a **camada de domínio puro da Engine de Bubble Sort** implementada em [`src/game/sorting/`](../../src/game/sorting/) e a **integração planejada com a interface gráfica** de [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx).
 
 > **Status de Implementação da Engine:**  
-> - **Camada de Domínio Puro (`src/game/sorting/`):** `IMPLEMENTADA` (P0.1 concluído com 100% de cobertura de tipos e testes funcionais).  
-> - **Integração com a Interface (`GameScreen.tsx`):** `EM PLANEJAMENTO` (P0.2 a P0.4).
+> - **Camada de Domínio Puro (`src/game/sorting/`):** `IMPLEMENTADA` (P0.1 concluído com 100% de cobertura de tipos e imutabilidade).  
+> - **Testes Automatizados (`src/game/sorting/bubbleSortEngine.test.ts`):** `IMPLEMENTADA` (P0.2 concluído com 31 testes unitários e de integração passando).  
+> - **Integração com a Interface (`GameScreen.tsx`):** `IMPLEMENTADA` (P0.3 concluído com rastreamento estrito de passada/par e modelo decisório TROCAR/MANTER).
 
 ---
 
@@ -173,6 +174,15 @@ export interface ExpectedComparison {
   readonly explanation: string;
 }
 
+export interface UserStepResult {
+  readonly valid: boolean;
+  readonly state: BubbleSortState;
+  readonly expectedDecision: UserDecision;
+  readonly actualDecision: UserDecision;
+  readonly explanation: string;
+  readonly stepRecord?: StepRecord;
+}
+
 export interface BubbleSortState {
   readonly initialValues: readonly number[];
   readonly currentValues: readonly number[];
@@ -188,15 +198,6 @@ export interface BubbleSortState {
   readonly sortedBoundary: number;     // índice a partir do qual caixas estão travadas
   readonly history: readonly StepRecord[];
 }
-
-export interface UserStepResult {
-  readonly valid: boolean;
-  readonly state: BubbleSortState;
-  readonly expectedDecision: UserDecision;
-  readonly actualDecision: UserDecision;
-  readonly explanation: string;
-  readonly stepRecord?: StepRecord;
-}
 ```
 
 ### 1.1. API Pública Disponível (`src/game/sorting/bubbleSortEngine.ts`) `[IMPLEMENTADA]`
@@ -208,7 +209,7 @@ export interface UserStepResult {
 3. **`executeBubbleSortStep(state: BubbleSortState): BubbleSortState`**  
    Executa deterministicamente o passo do algoritmo, permutando se necessário, registrando no histórico e atualizando os ponteiros e a fronteira `sortedBoundary`.
 4. **`executeUserStep(state: BubbleSortState, decision: UserDecision): UserStepResult`**  
-   Valida se a decisão do jogador (`SWAP` ou `KEEP`) corresponde à invariante do algoritmo. Se correta, avança a esteira; se incorreta, penaliza `errors` sem desviar o ponteiro.
+   Valida se a decisão do jogador (`SWAP` ou `KEEP`) corresponde à invariante do algoritmo. Se correta, avança a esteira; se incorreta, incrementa `state.errors` (fonte única canônica de decisões incorretas) sem desviar o ponteiro algorítmico.
 5. **`isBubbleSortComplete(state: BubbleSortState): boolean`**  
    Informa se todas as passadas foram finalizadas.
 6. **`getSortedIndices(state: BubbleSortState): number[]`**  
@@ -217,6 +218,18 @@ export interface UserStepResult {
    Verifica se um índice específico já atingiu sua posição definitiva.
 8. **`calculateTotalExpectedComparisons(arrayLength: number): number`**  
    Retorna a soma de comparações da progressão aritmética $\frac{n(n-1)}{2}$.
+9. **`calculateBubbleSortProgress(state: BubbleSortState): number`**  
+   Calcula a porcentagem inteira de progresso real da sessão didática de Bubble Sort (0 a 100), com base no total de micro-passos concluídos sobre o total teórico.
+
+> [!NOTE]
+> **Separação Canônica entre Engine e Telemetria de Sessão (ADR 0003):**  
+> Enquanto `errors` pertence ao estado da engine (`BubbleSortState.errors`) por representar violações diretas da invariante de ordenação em `executeUserStep`, a contagem de dicas (`hintsUsed`) foi deliberadamente alocada na camada pura de sessão [`src/game/session/sessionMetrics.ts`](../../src/game/session/sessionMetrics.ts). Pedir dica é um evento de scaffolding didático/interface, não uma operação do Bubble Sort.
+>
+> **Consumo Canônico de `history` pelo Replay (ADR 0004):**  
+> O histórico imutável `BubbleSortState.history` (`readonly StepRecord[]`) acumulado deterministicamente por `executeBubbleSortStep` é a fonte única e exclusiva de verdade consumida por [`src/game/replay/replayModel.ts`](../../src/game/replay/replayModel.ts). O replay deriva os quadros visualizáveis (incluindo o Quadro 0 inicial) sem reexecutar o algoritmo e sem alterar o estado da engine ou da sessão.
+>
+> **Sincronização Pura de Pseudocódigo no Replay (ADR 0005):**  
+> A representação canônica imutável do pseudocódigo (`BUBBLE_SORT_PSEUDOCODE`) e sua função de mapeamento determinístico `getPseudocodeHighlight(frame)` em [`src/game/replay/replayPseudocode.ts`](../../src/game/replay/replayPseudocode.ts) consomem diretamente os quadros de replay sem acoplar regras de ordenação adicionais, garantindo a correspondência 1:1 entre a instrução algorítmica textual e a ação observada nas caixas.
 
 ### 1.2. Decisão de Design: Variante Didática Previsível vs. Early Exit `[DECISÃO CANÔNICA]`
 
@@ -226,11 +239,7 @@ A engine foi implementada intencionalmente sob a **variante canônica determiní
 
 ---
 
-## 2. Diagrama de Transições da FSM `[PLANEJADO PARA INTEGRAÇÃO COM UI]`
-
----
-
-## 2. Diagrama de Transições da FSM `[PLANEJADO]`
+## 2. Diagrama de Transições da FSM `[IMPLEMENTADO NO GAMESCREEN]`
 
 ```mermaid
 stateDiagram-v2

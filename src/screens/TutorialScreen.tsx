@@ -1,5 +1,18 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useRef } from "react";
 import GameButton from "../components/GameButton";
+import NumberedBox from "../components/NumberedBox";
+import InstructionPanel from "../components/InstructionPanel";
+import {
+  createBubbleSortState,
+  executeUserStep,
+  getExpectedComparison,
+  getSortedIndices,
+} from "../game/sorting/bubbleSortEngine";
+import {
+  TUTORIAL_INITIAL_ARRAY,
+  getTutorialStepInfo,
+} from "../game/tutorial/tutorialGuide";
+import type { UserDecision } from "../game/sorting/types";
 
 interface TutorialScreenProps {
   onUnderstood: () => void;
@@ -7,220 +20,373 @@ interface TutorialScreenProps {
 }
 
 export default function TutorialScreen({ onUnderstood, onBack }: TutorialScreenProps) {
-  const [step, setStep] = useState<"before" | "comparing" | "after">("before");
+  const [gameState, setGameState] = useState(() =>
+    createBubbleSortState(TUTORIAL_INITIAL_ARRAY)
+  );
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animatingPair, setAnimatingPair] = useState<{ left: number; right: number } | null>(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "info" | "warning" | "success" | "error";
+  }>({
+    text: "Observe o primeiro par destacado (#1 e #2). Decida se eles devem TROCAR ou MANTER a posição.",
+    type: "info",
+  });
 
-  useEffect(() => {
-    const cycle = () => {
-      setStep("comparing");
-      setTimeout(() => setStep("after"), 900);
-      setTimeout(() => setStep("before"), 2200);
-    };
-    const interval = setInterval(cycle, 3000);
-    cycle();
-    return () => clearInterval(interval);
-  }, []);
+  const isActionLockedRef = useRef(false);
+
+  const stepInfo = getTutorialStepInfo(gameState);
+  const expected = getExpectedComparison(gameState);
+  const sortedIndices = getSortedIndices(gameState);
+
+  const handleDecision = (decision: UserDecision) => {
+    if (isActionLockedRef.current || isAnimating || gameState.completed) return;
+
+    if (decision === "SWAP") {
+      const result = executeUserStep(gameState, "SWAP");
+      if (result.valid && expected) {
+        isActionLockedRef.current = true;
+        setIsAnimating(true);
+        setAnimatingPair({ left: expected.leftIndex, right: expected.rightIndex });
+        setMessage({ text: result.explanation, type: "success" });
+
+        setTimeout(() => {
+          setGameState(result.state);
+          setAnimatingPair(null);
+          setIsAnimating(false);
+          isActionLockedRef.current = false;
+        }, 500);
+      } else {
+        setMessage({
+          text: result.explanation,
+          type: "warning",
+        });
+      }
+    } else {
+      // KEEP
+      const result = executeUserStep(gameState, "KEEP");
+      if (result.valid) {
+        setGameState(result.state);
+        setMessage({ text: result.explanation, type: "success" });
+      } else {
+        setMessage({
+          text: result.explanation,
+          type: "warning",
+        });
+      }
+    }
+  };
+
+  const handleResetTutorial = () => {
+    setGameState(createBubbleSortState(TUTORIAL_INITIAL_ARRAY));
+    setIsAnimating(false);
+    setAnimatingPair(null);
+    isActionLockedRef.current = false;
+    setMessage({
+      text: "Treinamento reiniciado. Observe o par destacado e decida a ação correta.",
+      type: "info",
+    });
+  };
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#060b1a] bg-grid scanlines flex flex-col items-center justify-center">
+    <div className="relative w-full h-full overflow-y-auto bg-[#060b1a] bg-grid scanlines flex flex-col items-center py-6 px-4">
       {/* Ambient glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-72 bg-purple-600/6 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[550px] h-72 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col items-center gap-8 max-w-2xl w-full px-8">
-
-        {/* Back button */}
-        <div className="w-full flex justify-start">
+      <div className="relative z-10 flex flex-col items-center gap-6 max-w-2xl w-full">
+        {/* Top bar with back button */}
+        <div className="w-full flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors text-xs tracking-widest"
+            className="flex items-center gap-2 text-white/40 hover:text-cyan-400 transition-colors text-xs tracking-widest font-mono cursor-pointer"
             style={{ fontFamily: "'Space Mono', monospace" }}
           >
-            ← VOLTAR
+            ← VOLTAR AO INÍCIO
           </button>
+
+          <span
+            className="text-[10px] text-purple-400/80 tracking-widest font-mono"
+            style={{ fontFamily: "'Space Mono', monospace" }}
+          >
+            MINI-TREINAMENTO INTERATIVO
+          </span>
         </div>
 
         {/* Header */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-purple-500/20 bg-purple-950/20 mb-4">
-            <span className="text-[10px] text-purple-400 tracking-widest"
-              style={{ fontFamily: "'Space Mono', monospace" }}>
-              TUTORIAL — ALGORITMO 01
+        <div className="text-center flex flex-col items-center gap-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-purple-500/30 bg-purple-950/30">
+            <span
+              className="text-[10px] text-purple-300 tracking-widest font-mono uppercase"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              {stepInfo.title}
             </span>
           </div>
-          <h2
-            className="text-4xl font-black tracking-tight text-white"
-            style={{ fontFamily: "'Orbitron', sans-serif", textShadow: "0 0 30px rgba(139,92,246,0.4)" }}
+
+          <h1
+            className="text-3xl sm:text-4xl font-black tracking-tight text-white"
+            style={{
+              fontFamily: "'Orbitron', sans-serif",
+              textShadow: "0 0 30px rgba(139,92,246,0.35)",
+            }}
           >
             PROTOCOLO BUBBLE
-          </h2>
+          </h1>
         </div>
 
-        {/* Description card */}
-        <div className="w-full panel-border bg-[#0d1635]/60 rounded-xl p-6">
+        {/* Context / Prompt Card */}
+        <div className="w-full panel-border bg-[#0d1635]/70 rounded-xl p-5 text-center">
           <p
-            className="text-white/70 text-sm leading-relaxed text-center"
+            className="text-white/80 text-sm leading-relaxed"
             style={{ fontFamily: "'Space Mono', monospace" }}
           >
-            No <span className="text-cyan-300">Bubble Sort</span>, dois elementos vizinhos são comparados.
-            <br />
-            Se o elemento da <span className="text-yellow-300">esquerda</span> for{" "}
-            <span className="text-red-400">maior</span> que o da{" "}
-            <span className="text-yellow-300">direita</span>, eles trocam de posição.
+            {stepInfo.prompt}
           </p>
         </div>
 
-        {/* Animation area */}
-        <div className="w-full panel-border bg-[#080f28]/80 rounded-xl p-8">
-          <div className="text-center mb-6">
+        {/* Conveyor belt with boxes */}
+        <div className="w-full panel-border bg-[#080f28]/90 rounded-xl p-6 sm:p-8 flex flex-col items-center gap-4">
+          <div className="w-full flex justify-between items-center px-2">
             <span
-              className="text-[10px] text-white/30 tracking-widest"
+              className="text-[10px] text-cyan-400/60 tracking-widest font-mono"
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
-              SIMULAÇÃO AO VIVO
+              ESTEIRA DE TREINAMENTO
+            </span>
+            <span
+              className="text-[10px] text-white/30 tracking-widest font-mono"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              CAPACIDADE: 3 PKG
             </span>
           </div>
 
-          <div className="flex flex-col items-center gap-6">
-            {/* Boxes animation */}
-            <div className="flex items-center gap-6 justify-center">
+          {/* Top rail */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
 
-              {/* Box 8 / 3 */}
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className={`
-                    w-24 h-24 rounded-xl flex flex-col items-center justify-center relative
-                    transition-all duration-300
-                    ${step === "after" ? "bg-emerald-950 border-2 border-emerald-500/60" : "bg-[#0f1e4a] border-2 border-[#2a4a9e]"}
-                    ${step === "comparing" ? "border-cyan-400 bg-cyan-950" : ""}
-                  `}
-                >
-                  <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-t-xl" />
-                  <span
-                    className={`text-4xl font-bold transition-colors duration-300
-                      ${step === "after" ? "text-emerald-300" : step === "comparing" ? "text-cyan-200" : "text-white"}`}
-                    style={{ fontFamily: "'Orbitron', sans-serif" }}
-                  >
-                    {step === "after" ? 3 : 8}
-                  </span>
-                  <span
-                    className="text-[9px] text-white/20 absolute bottom-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
-                  >
-                    {step === "after" ? "OK" : "PKG"}
-                  </span>
-                </div>
-                {step === "comparing" && (
-                  <div className="text-[10px] text-red-400 animate-pulse"
-                    style={{ fontFamily: "'Space Mono', monospace" }}>
-                    MAIOR ▼
-                  </div>
-                )}
+          {/* Conveyor track */}
+          <div className="conveyor-track py-6 px-6 sm:px-12 rounded-xl relative flex items-center justify-center gap-4 sm:gap-8 w-full">
+            {/* Corner indicators */}
+            <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-cyan-500/30" />
+            <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-cyan-500/30" />
+            <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-cyan-500/30" />
+            <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-cyan-500/30" />
+
+            {gameState.currentValues.map((val, idx) => {
+              const isSelected =
+                !gameState.completed &&
+                expected !== null &&
+                (idx === expected.leftIndex || idx === expected.rightIndex);
+              const isSorted = sortedIndices.includes(idx);
+              const anim =
+                animatingPair?.left === idx
+                  ? "right"
+                  : animatingPair?.right === idx
+                    ? "left"
+                    : null;
+
+              return (
+                <NumberedBox
+                  key={`box-${idx}-${val}`}
+                  value={val}
+                  index={idx}
+                  selected={isSelected}
+                  sorted={isSorted}
+                  disabled={isAnimating || gameState.completed}
+                  badge={isSelected ? "PAR" : isSorted ? "OK" : "PKG"}
+                  animating={anim}
+                  size="lg"
+                  onClick={() => {}}
+                />
+              );
+            })}
+          </div>
+
+          {/* Bottom rail */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+
+          {/* Active pair callout under conveyor */}
+          {!gameState.completed && expected ? (
+            <div className="flex items-center gap-2 text-xs font-mono text-cyan-300/80">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span>
+                COMPARAÇÃO ATIVA: #{expected.leftIndex + 1} ({expected.leftValue}) vs #{expected.rightIndex + 1} ({expected.rightValue})
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs font-mono text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>TODAS AS CARGAS ESTÃO EM ORDEM CRESCENTE</span>
+            </div>
+          )}
+        </div>
+
+        {/* Pass Notice Callout (Concept of Pass) */}
+        {stepInfo.passNotice && !gameState.completed && (
+          <div className="w-full panel-border bg-purple-950/25 border-purple-500/30 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
+            <span className="text-purple-400 text-lg leading-none mt-0.5">✦</span>
+            <div className="flex flex-col gap-1">
+              <span
+                className="text-xs font-bold text-purple-300 tracking-wider font-mono uppercase"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {stepInfo.passNotice.title}
+              </span>
+              <p
+                className="text-white/70 text-xs leading-relaxed font-mono"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {stepInfo.passNotice.description}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Operator Decision Controls (TROCAR vs MANTER) */}
+        {!gameState.completed && (
+          <div className="w-full flex flex-col items-center gap-3">
+            <span
+              className="text-[10px] text-white/40 tracking-widest font-mono"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+            >
+              DECISÃO DO OPERADOR
+            </span>
+
+            <div className="flex items-center justify-center gap-4 w-full">
+              <GameButton
+                onClick={() => handleDecision("SWAP")}
+                disabled={isAnimating || gameState.completed}
+                variant="primary"
+                size="md"
+                className="min-w-[150px] shadow-[0_0_15px_rgba(0,245,255,0.25)]"
+              >
+                ⇄ TROCAR
+              </GameButton>
+
+              <GameButton
+                onClick={() => handleDecision("KEEP")}
+                disabled={isAnimating || gameState.completed}
+                variant="secondary"
+                size="md"
+                className="min-w-[150px]"
+              >
+                = MANTER
+              </GameButton>
+            </div>
+          </div>
+        )}
+
+        {/* Instruction feedback panel */}
+        <div className="w-full">
+          <InstructionPanel message={message.text} type={message.type} />
+        </div>
+
+        {/* Completion Panel */}
+        {gameState.completed ? (
+          <div className="w-full panel-border bg-emerald-950/20 border-emerald-500/40 rounded-xl p-6 flex flex-col items-center gap-5 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-emerald-500/30 bg-emerald-950/40">
+              <span
+                className="text-[10px] text-emerald-300 font-mono tracking-widest uppercase"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                ✓ TREINAMENTO BÁSICO CONCLUÍDO
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h3
+                className="text-xl sm:text-2xl font-bold text-white tracking-wider"
+                style={{ fontFamily: "'Orbitron', sans-serif" }}
+              >
+                VETOR [1, 2, 3] ESTABILIZADO!
+              </h3>
+              <p
+                className="text-white/70 text-xs sm:text-sm font-mono max-w-lg leading-relaxed"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                Você concluiu o treinamento básico e praticou a invariante fundamental do Protocolo Bubble: comparar vizinhos, trocar apenas quando fora de ordem e consolidar elementos ao fim de cada passada.
+              </p>
+            </div>
+
+            {/* Checklist of practiced concepts */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full text-left max-w-lg bg-[#060b1a]/60 p-3 rounded-lg border border-white/5 font-mono text-[11px] text-white/70">
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400">✓</span>
+                <span>Comparações adjacentes</span>
               </div>
-
-              {/* Arrow indicator */}
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={`
-                    w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-300
-                    ${step === "comparing" ? "border-yellow-500/60 bg-yellow-950/30" : "border-white/10 bg-transparent"}
-                  `}
-                >
-                  <span
-                    className={`text-lg transition-all duration-300 ${step === "comparing" ? "text-yellow-400" : "text-white/20"}`}
-                  >
-                    {step === "after" ? "✓" : "⇄"}
-                  </span>
-                </div>
-                <span
-                  className={`text-[9px] tracking-wider transition-colors duration-300
-                    ${step === "comparing" ? "text-yellow-400" : step === "after" ? "text-emerald-400" : "text-white/20"}`}
-                  style={{ fontFamily: "'Space Mono', monospace" }}
-                >
-                  {step === "before" ? "AGUARDANDO" : step === "comparing" ? "COMPARANDO" : "TROCADO!"}
-                </span>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400">✓</span>
+                <span>Troca quando esquerda &gt; direita</span>
               </div>
-
-              {/* Box 3 / 8 */}
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className={`
-                    w-24 h-24 rounded-xl flex flex-col items-center justify-center relative
-                    transition-all duration-300
-                    ${step === "after" ? "bg-[#0f1e4a] border-2 border-[#2a4a9e]" : "bg-[#0f1e4a] border-2 border-[#2a4a9e]"}
-                    ${step === "comparing" ? "border-cyan-400 bg-cyan-950" : ""}
-                  `}
-                >
-                  <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-t-xl" />
-                  <span
-                    className={`text-4xl font-bold transition-colors duration-300
-                      ${step === "comparing" ? "text-cyan-200" : "text-white"}`}
-                    style={{ fontFamily: "'Orbitron', sans-serif" }}
-                  >
-                    {step === "after" ? 8 : 3}
-                  </span>
-                  <span
-                    className="text-[9px] text-white/20 absolute bottom-2"
-                    style={{ fontFamily: "'Space Mono', monospace" }}
-                  >
-                    PKG
-                  </span>
-                </div>
-                {step === "comparing" && (
-                  <div className="text-[10px] text-cyan-400 animate-pulse"
-                    style={{ fontFamily: "'Space Mono', monospace" }}>
-                    MENOR ▲
-                  </div>
-                )}
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400">✓</span>
+                <span>Manter quando esquerda ≤ direita</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400">✓</span>
+                <span>Conceito de passada e consolidação</span>
               </div>
             </div>
 
-            {/* Step labels */}
-            <div className="flex gap-8 justify-center">
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${step === "before" ? "bg-cyan-400 shadow-[0_0_6px_#00f5ff]" : "bg-white/10"}`}
-                />
-                <span className="text-[9px] text-white/30" style={{ fontFamily: "'Space Mono', monospace" }}>ANTES</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${step === "comparing" ? "bg-yellow-400 shadow-[0_0_6px_#eab308]" : "bg-white/10"}`}
-                />
-                <span className="text-[9px] text-white/30" style={{ fontFamily: "'Space Mono', monospace" }}>COMPARANDO</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${step === "after" ? "bg-emerald-400 shadow-[0_0_6px_#4ade80]" : "bg-white/10"}`}
-                />
-                <span className="text-[9px] text-white/30" style={{ fontFamily: "'Space Mono', monospace" }}>APÓS TROCA</span>
-              </div>
+            {/* CTAs */}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <GameButton
+                onClick={onUnderstood}
+                variant="primary"
+                size="lg"
+                className="min-w-[240px] shadow-[0_0_20px_rgba(0,245,255,0.4)]"
+              >
+                INICIAR FASE 1 →
+              </GameButton>
+
+              <GameButton
+                onClick={handleResetTutorial}
+                variant="ghost"
+                size="md"
+              >
+                ↺ REPETIR TREINAMENTO
+              </GameButton>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Rules reference during tutorial */
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="panel-border bg-[#0d1635]/40 rounded-lg p-3.5 flex flex-col gap-1.5">
+              <span
+                className="text-cyan-400 text-[11px] tracking-widest font-mono font-bold"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                REGRA 01 — TROCAR
+              </span>
+              <p
+                className="text-white/60 text-xs leading-relaxed font-mono"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                Se a carga da <span className="text-yellow-300">esquerda</span> for{" "}
+                <span className="text-red-400 font-bold">maior</span> que a da{" "}
+                <span className="text-yellow-300">direita</span>, acione{" "}
+                <span className="text-cyan-300 font-bold">TROCAR</span>.
+              </p>
+            </div>
 
-        {/* Rule cards */}
-        <div className="w-full grid grid-cols-2 gap-3">
-          <div className="panel-border bg-[#0d1635]/40 rounded-lg p-4 flex flex-col gap-2">
-            <span className="text-cyan-400 text-xs tracking-widest"
-              style={{ fontFamily: "'Space Mono', monospace" }}>REGRA 01</span>
-            <p className="text-white/60 text-xs leading-relaxed"
-              style={{ fontFamily: "'Space Mono', monospace" }}>
-              Selecione dois elementos <span className="text-white/90">vizinhos</span> para compará-los.
-            </p>
+            <div className="panel-border bg-[#0d1635]/40 rounded-lg p-3.5 flex flex-col gap-1.5">
+              <span
+                className="text-purple-400 text-[11px] tracking-widest font-mono font-bold"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                REGRA 02 — MANTER
+              </span>
+              <p
+                className="text-white/60 text-xs leading-relaxed font-mono"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                Se a carga da <span className="text-yellow-300">esquerda</span> for{" "}
+                <span className="text-emerald-400 font-bold">menor ou igual</span>, a ordem relativa está certa: acione{" "}
+                <span className="text-purple-300 font-bold">MANTER</span>.
+              </p>
+            </div>
           </div>
-          <div className="panel-border bg-[#0d1635]/40 rounded-lg p-4 flex flex-col gap-2">
-            <span className="text-purple-400 text-xs tracking-widest"
-              style={{ fontFamily: "'Space Mono', monospace" }}>REGRA 02</span>
-            <p className="text-white/60 text-xs leading-relaxed"
-              style={{ fontFamily: "'Space Mono', monospace" }}>
-              Troque se o da <span className="text-white/90">esquerda &gt; direita</span>. Repita até ordenar.
-            </p>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <GameButton onClick={onUnderstood} variant="primary" size="lg" className="min-w-[240px]">
-          ✓ &nbsp; ENTENDI
-        </GameButton>
+        )}
       </div>
     </div>
   );

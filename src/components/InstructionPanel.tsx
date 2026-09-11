@@ -39,6 +39,8 @@ export default function InstructionPanel({ message, type = "info" }: Instruction
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={`flex items-center gap-3 px-4 py-3 rounded border ${cfg.border} ${cfg.bg}`}
     >
       <span className={`text-base ${cfg.iconColor} flex-shrink-0`}>{cfg.icon}</span>

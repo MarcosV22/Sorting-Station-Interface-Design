@@ -75,7 +75,8 @@ A documentação canônica é composta por 13 páginas temáticas e o repositór
 | **10** | [`10-roadmap.md`](10-roadmap.md) | `IMPLEMENTADO` / `EM PLANEJAMENTO` / `FUTURO` | Planejamento em P0 a P3, matriz de riscos, diretrizes do artigo e próximas 10 tarefas de código. |
 | **11** | [`11-architecture-decisions.md`](11-architecture-decisions.md) | `IMPLEMENTADO` / `EM DECISÃO` | Governança de ADRs, honestidade histórica, template canônico e 8 decisões arquiteturais candidatas. |
 | **12** | [`12-pedagogy-and-academic-traceability.md`](12-pedagogy-and-academic-traceability.md) | `IMPLEMENTADO` / `EM PLANEJAMENTO` | Rastreabilidade entre mecânicas e conceitos computacionais, limites de afirmações e rigor científico. |
-| **ADR**| [`docs/adr/TEMPLATE.md`](../adr/TEMPLATE.md) | `IMPLEMENTADO` | Template oficial para registro de Decisões Arquiteturais no repositório. |
+| **QA** | [`qa-gameplay-checklist.md`](qa-gameplay-checklist.md) | `IMPLEMENTADO` | Roteiro operacional e matriz de testes manuais/homologação de mecânicas de gameplay e regressão. |
+| **ADR**| [`docs/adr/`](../adr/) | `IMPLEMENTADO` | Repositório de ADRs, incluindo [`TEMPLATE.md`](../adr/TEMPLATE.md) e ADRs 0001 a 0005 ([`0005-replay-synchronized-pseudocode.md`](../adr/0005-replay-synchronized-pseudocode.md)). |
 
 ---
 

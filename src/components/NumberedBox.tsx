@@ -4,6 +4,7 @@ interface NumberedBoxProps {
   selected: boolean;
   disabled: boolean;
   sorted?: boolean;
+  badge?: string;
   onClick: (index: number) => void;
   animating?: "left" | "right" | null;
   size?: "sm" | "md" | "lg";
@@ -15,6 +16,7 @@ export default function NumberedBox({
   selected,
   disabled,
   sorted = false,
+  badge,
   onClick,
   animating = null,
   size = "lg",
@@ -49,9 +51,11 @@ export default function NumberedBox({
       <button
         onClick={() => !disabled && onClick(index)}
         disabled={disabled}
+        aria-label={`Caixa #${index + 1}, valor ${value}${selected ? ", selecionada no par ativo" : ""}${sorted ? ", consolidada" : ""}`}
         className={`
           relative ${s.box} rounded-lg flex flex-col items-center justify-center
           transition-all duration-200 cursor-pointer select-none
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060b1a]
           ${selected
             ? "bg-cyan-950 animate-pulse-border"
             : sorted
@@ -93,7 +97,7 @@ export default function NumberedBox({
           }`}
           style={{ fontFamily: "'Space Mono', monospace" }}
         >
-          {selected ? "SEL" : sorted ? "OK" : "PKG"}
+          {badge ?? (selected ? "PAR" : sorted ? "OK" : "PKG")}
         </span>
       </button>
     </div>

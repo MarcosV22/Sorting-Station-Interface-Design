@@ -37,7 +37,7 @@ function ConveyorBelt({ y, speed }: { y: number; speed: number }) {
 
 export default function HomeScreen({ onStart, onHowToPlay }: HomeScreenProps) {
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#060b1a] bg-grid scanlines flex flex-col items-center justify-center">
+    <div className="relative w-full h-full min-h-full overflow-y-auto bg-[#060b1a] bg-grid scanlines flex flex-col items-center justify-start sm:justify-center py-8">
       {/* Animated belt CSS */}
       <style>{`
         @keyframes scroll-belt {

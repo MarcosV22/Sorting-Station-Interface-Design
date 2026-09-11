@@ -9,31 +9,28 @@
 
 ## 1. Estado Real dos Testes Automatizados Atuais
 
-Com a conclusão da tarefa **P0.2**, a infraestrutura de testes automatizados de domínio puro do projeto foi estabelecida com sucesso:
+Com as conclusões dos marcos **P0.2**, **P0.8**, **P1.1** e **P1.2**, a infraestrutura de testes automatizados do projeto cobre 100% da lógica pura de domínio, tutorial, agregação de campanha e telemetria pedagógica de sessão:
 
 - **Framework de Testes Implementado:** **Vitest** (`vitest ^5.0.0`) instalado como dependência de desenvolvimento canônica via `pnpm add -D vitest`.
-- **Arquivos de Teste Ativos:** [`src/game/sorting/bubbleSortEngine.test.ts`](../../src/game/sorting/bubbleSortEngine.test.ts) (contendo **28 testes unitários** organizados em 15 grupos temáticos, com 100% de aprovação em ~340ms).
+- **Arquivos de Teste Ativos (5 arquivos, 54 testes automatizados aprovados):**
+  1. [`src/game/sorting/bubbleSortEngine.test.ts`](../../src/game/sorting/bubbleSortEngine.test.ts) (**31 testes unitários**): Cobre inicialização, invariantes algorítmicas, validação estrita de passos do usuário (`SWAP`/`KEEP`), estabilidade com duplicatas, histórico e cálculo de progresso real;
+  2. [`src/game/campaign/campaignSummary.test.ts`](../../src/game/campaign/campaignSummary.test.ts) (**4 testes unitários**): Cobre agregação pura em memória das métricas factuais da campanha (fases concluídas, comparações totais, trocas totais, erros totais e dicas totais);
+  3. [`src/game/tutorial/tutorialGuide.test.ts`](../../src/game/tutorial/tutorialGuide.test.ts) (**5 testes unitários**): Cobre a máquina de estados pedagógica do tutorial interativo `[3, 1, 2]` e mensagens formativas;
+  4. [`src/game/session/sessionMetrics.test.ts`](../../src/game/session/sessionMetrics.test.ts) (**5 testes unitários**): Cobre o registro imutável de dicas (`hintsUsed`), inicialização e reinício de sessão desacoplados da engine (ADR 0003);
+  5. [`src/game/replay/replayModel.test.ts`](../../src/game/replay/replayModel.test.ts) (**9 testes unitários**): Cobre a derivação pura de quadros de replay, quadro inicial (Quadro 0), último quadro ordenado, identificação de SWAP e KEEP, ordenação sequencial estrita, imutabilidade em runtime e recuperação segura via clamping (ADR 0004).
 - **Scripts de Teste Canônicos em [`package.json`](../../package.json):**
   - `pnpm run test:run` (ou `npm run test:run`): Execução única headless da suíte completa;
   - `pnpm test` (ou `npm test`): Modo watch interativo de desenvolvimento.
 - **Escopo Coberto Efetivamente:**
-  - **100% da Camada de Domínio Puro da Bubble Sort Engine ([`src/game/sorting/`](../../src/game/sorting/)):**
-    1. *Inicialização e cópia defensiva:* verificação de ponteiros, contadores zerados e imutabilidade de entrada;
-    2. *Par esperado:* cálculo determinístico de índices, valores e sinalizador de troca (`getExpectedComparison`);
-    3. *Passo algorítmico:* avanço sequencial da máquina de estados, permutações e conclusão (`executeBubbleSortStep`);
-    4. *Interação do jogador:* validação de `SWAP` vs. `KEEP`, garantindo que ações incorretas incrementem `errors` mas **NÃO avancem a FSM** nem modifiquem o vetor (`executeUserStep`);
-    5. *Passadas formais:* verificação da fórmula analítica $\sum_{i=1}^{n-1} i = \frac{n(n-1)}{2}$;
-    6. *Elementos consolidados:* conferência estrita de que caixas só são marcadas como travadas (`sortedBoundary`) ao término formal da respectiva passada, rejeitando heurísticas visuais precoces;
-    7. *Histórico sequencial:* registro estruturado de auditoria (`StepRecord`) em cada passo para futuro replay;
-    8. *Imutabilidade:* preservação de estados anteriores e integridade de objetos congelados (`Object.isFrozen`);
-    9. *Casos de borda:* vetor vazio `[]` e vetor unitário `[42]`;
-    10. *Vetor já ordenado:* `[1, 2, 3]` executando todas as passadas didáticas sem early exit silencioso;
-    11. *Estabilidade e casos especiais:* elementos duplicados `[3, 1, 3, 2]` e números negativos `[-5, 2, -10, 0]`;
-    12. *Determinismo e segurança:* reprodutibilidade idêntica e no-op seguro após conclusão.
+  - **100% das Camadas de Domínio e Lógica Pura (63 testes automatizados em 6 arquivos):**
+    1. *Bubble Sort Engine:* 31 testes garantindo integridade matemática formal;
+    2. *Agregação da Campanha:* 4 testes validando métricas factuais globais;
+    3. *Tutorial Interativo:* 5 testes validando scaffolding didático;
+    4. *Métricas de Sessão:* 5 testes validando imutabilidade e contagem rigorosa de dicas sem poluir a engine;
+    5. *Camada Pura de Replay:* 9 testes validando transformação e integridade determinística dos quadros de reprodução;
+    6. *Sincronização de Pseudocódigo (P1.4):* 9 testes em `replayPseudocode.test.ts` validando o modelo canônico de 9 instruções, mapeamentos `INITIAL`, `KEEP` e `SWAP`, formatação de comparações concretas, identificação estrita da linha de troca, determinismo e imutabilidade (`Object.freeze`).
 - **O que ainda NÃO possui testes automatizados:**
-  - Telas React ([`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx), [`HomeScreen.tsx`](../../src/screens/HomeScreen.tsx), etc.);
-  - Integração entre FSM e UI (pendente para as etapas P0.3+);
-  - Testes de acessibilidade (ARIA/teclado) e testes E2E.
+  - Testes de renderização de componentes React e acessibilidade (ARIA/teclado).
 
 ---
 

@@ -8,6 +8,7 @@ import {
   getSortedIndices,
   isIndexPermanentlySorted,
   calculateTotalExpectedComparisons,
+  calculateBubbleSortProgress,
 } from "./index"
 import type { BubbleSortState } from "./types"
 
@@ -587,6 +588,121 @@ describe("Bubble Sort Engine — Suíte Pedagógica P0.2", () => {
       expect(result.state.comparisons).toBe(1)
       expect(result.state.swaps).toBe(1)
       expect(result.state.currentValues).toEqual([1, 3])
+    })
+  })
+
+  // --------------------------------------------------
+  // 16. Progresso Algorítmico Real
+  // --------------------------------------------------
+  describe("16. Progresso Algorítmico Real (calculateBubbleSortProgress)", () => {
+    it("deve retornar 100% para vetores vazios e unitários", () => {
+      expect(calculateBubbleSortProgress(createBubbleSortState([]))).toBe(100)
+      expect(calculateBubbleSortProgress(createBubbleSortState([42]))).toBe(100)
+    })
+
+    it("deve calcular progressão precisa para vetor de 4 elementos (total 6 passos)", () => {
+      let state = createBubbleSortState([5, 2, 4, 1])
+      expect(calculateBubbleSortProgress(state)).toBe(0) // 0/6 = 0%
+
+      state = executeBubbleSortStep(state)
+      expect(calculateBubbleSortProgress(state)).toBe(17) // 1/6 = 16.67% -> 17%
+
+      state = executeBubbleSortStep(state)
+      expect(calculateBubbleSortProgress(state)).toBe(33) // 2/6 = 33.33% -> 33%
+
+      state = executeBubbleSortStep(state)
+      expect(calculateBubbleSortProgress(state)).toBe(50) // 3/6 = 50%
+
+      state = executeBubbleSortStep(state)
+      expect(calculateBubbleSortProgress(state)).toBe(67) // 4/6 = 66.67% -> 67%
+
+      state = executeBubbleSortStep(state)
+      expect(calculateBubbleSortProgress(state)).toBe(83) // 5/6 = 83.33% -> 83%
+
+      state = executeBubbleSortStep(state)
+      expect(calculateBubbleSortProgress(state)).toBe(100) // 6/6 = 100%
+      expect(state.completed).toBe(true)
+    })
+  })
+
+  // --------------------------------------------------
+  // 17. Simulação Completa do Fluxo GameScreen P0.3
+  // --------------------------------------------------
+  describe("17. Simulação Completa do Fluxo GameScreen P0.3 ([5, 2, 4, 1])", () => {
+    it("deve simular a jornada interativa com tentativas erradas e acertos até ordenação final", () => {
+      let state = createBubbleSortState([5, 2, 4, 1])
+
+      // Passo 1: [5, 2] -> decisão errada: KEEP
+      let stepResult = executeUserStep(state, "KEEP")
+      expect(stepResult.valid).toBe(false)
+      expect(stepResult.state.errors).toBe(1)
+      expect(stepResult.state.comparisons).toBe(0)
+      expect(stepResult.state.swaps).toBe(0)
+      expect(stepResult.state.currentValues).toEqual([5, 2, 4, 1])
+      state = stepResult.state // atualiza estado com penalidade
+
+      // Passo 1: [5, 2] -> decisão correta: SWAP
+      stepResult = executeUserStep(state, "SWAP")
+      expect(stepResult.valid).toBe(true)
+      state = stepResult.state
+      expect(state.currentValues).toEqual([2, 5, 4, 1])
+      expect(state.comparisons).toBe(1)
+      expect(state.swaps).toBe(1)
+
+      // Passo 2: [5, 4] -> decisão correta: SWAP
+      stepResult = executeUserStep(state, "SWAP")
+      expect(stepResult.valid).toBe(true)
+      state = stepResult.state
+      expect(state.currentValues).toEqual([2, 4, 5, 1])
+      expect(state.comparisons).toBe(2)
+      expect(state.swaps).toBe(2)
+
+      // Passo 3: [5, 1] -> decisão correta: SWAP -> fim da passada 0
+      stepResult = executeUserStep(state, "SWAP")
+      expect(stepResult.valid).toBe(true)
+      state = stepResult.state
+      expect(state.currentValues).toEqual([2, 4, 1, 5])
+      expect(state.comparisons).toBe(3)
+      expect(state.swaps).toBe(3)
+      expect(state.passIndex).toBe(1)
+      expect(getSortedIndices(state)).toEqual([3]) // 5 consolidado
+
+      // Passo 4: [2, 4] -> decisão errada: SWAP
+      stepResult = executeUserStep(state, "SWAP")
+      expect(stepResult.valid).toBe(false)
+      expect(stepResult.state.errors).toBe(2)
+      state = stepResult.state
+
+      // Passo 4: [2, 4] -> decisão correta: KEEP
+      stepResult = executeUserStep(state, "KEEP")
+      expect(stepResult.valid).toBe(true)
+      state = stepResult.state
+      expect(state.currentValues).toEqual([2, 4, 1, 5])
+      expect(state.comparisons).toBe(4)
+      expect(state.swaps).toBe(3)
+
+      // Passo 5: [4, 1] -> decisão correta: SWAP -> fim da passada 1
+      stepResult = executeUserStep(state, "SWAP")
+      expect(stepResult.valid).toBe(true)
+      state = stepResult.state
+      expect(state.currentValues).toEqual([2, 1, 4, 5])
+      expect(state.comparisons).toBe(5)
+      expect(state.swaps).toBe(4)
+      expect(state.passIndex).toBe(2)
+      expect(getSortedIndices(state)).toEqual([2, 3]) // 4 e 5 consolidados
+
+      // Passo 6: [2, 1] -> decisão correta: SWAP -> fim da passada 2 e conclusão
+      stepResult = executeUserStep(state, "SWAP")
+      expect(stepResult.valid).toBe(true)
+      state = stepResult.state
+      expect(state.currentValues).toEqual([1, 2, 4, 5])
+      expect(state.comparisons).toBe(6)
+      expect(state.swaps).toBe(5)
+      expect(state.errors).toBe(2)
+      expect(state.completed).toBe(true)
+      expect(isBubbleSortComplete(state)).toBe(true)
+      expect(getSortedIndices(state)).toEqual([0, 1, 2, 3])
+      expect(calculateBubbleSortProgress(state)).toBe(100)
     })
   })
 })

@@ -30,6 +30,8 @@ flowchart TD
         App -- "screen === 'tutorial'" --> TutorialScreen["src/screens/TutorialScreen.tsx"]
         App -- "screen === 'game'" --> GameScreen["src/screens/GameScreen.tsx"]
         App -- "screen === 'result'" --> ResultScreen["src/screens/ResultScreen.tsx"]
+        App -- "screen === 'replay'" --> ReplayScreen["src/screens/ReplayScreen.tsx"]
+        App -- "screen === 'campaign-complete'" --> CampaignCompleteScreen["src/screens/CampaignCompleteScreen.tsx"]
     end
 
     subgraph ScreenEvents ["3. Ações e Callbacks de Transição"]
@@ -37,9 +39,11 @@ flowchart TD
         TutorialScreen -- "onBack()" --> AppHome["setScreen('home')"]
         TutorialScreen -- "onUnderstood()" --> AppGame["setScreen('game')"]
         
-        GameScreen -- "onComplete(comparisons, swaps, finalArray)" --> AppResult["setResult({...})\nsetScreen('result')"]
+        GameScreen -- "onComplete(comparisons, swaps, finalArray, ...)" --> AppResult["setResult({...})\nsetScreen('result')"]
         ResultScreen -- "onRepeat()" --> AppRepeat["setResult(null)\nsetScreen('game')"]
         ResultScreen -- "onNext()" --> AppNext["setPhase(min(phase+1, 3))\nsetResult(null)\nsetScreen('game')"]
+        ResultScreen -- "onViewReplay()" --> AppReplay["setScreen('replay')"]
+        ReplayScreen -- "onBackToResult()" --> AppResultBack["setScreen('result')"]
     end
 
     subgraph ComponentsHierarchy ["4. Componentes Reutilizáveis"]
@@ -53,6 +57,9 @@ flowchart TD
         TutorialScreen --> GameButton
         ResultScreen --> GameButton
         ResultScreen --> NumberedBox
+        ReplayScreen --> NumberedBox
+        ReplayScreen --> GameButton
+        ReplayScreen --> BubbleSortPseudocodePanel["BubbleSortPseudocodePanel.tsx"]
     end
 ```
 
@@ -84,8 +91,14 @@ O ciclo de inicialização da aplicação é direto e enxuto:
 A navegação da aplicação **não utiliza rotas de URL**. Ela funciona como uma máquina de estados de interface implementada através de uma união de tipos literais e renderização condicional em [`src/App.tsx`](../../src/App.tsx):
 
 ```typescript
-// src/App.tsx:L7
-type Screen = "home" | "tutorial" | "game" | "result";
+// src/App.tsx
+type Screen =
+  | "home"
+  | "tutorial"
+  | "game"
+  | "result"
+  | "replay"
+  | "campaign-complete";
 ```
 
 ### Mecânica de Transição
@@ -96,18 +109,17 @@ type Screen = "home" | "tutorial" | "game" | "result";
 | `HomeScreen` | `onHowToPlay` | `"tutorial"` | Direciona o jogador para a mesma explicação ([`src/App.tsx`](../../src/App.tsx)) |
 | `TutorialScreen` | `onBack` | `"home"` | Retorna para a tela inicial ([`src/App.tsx`](../../src/App.tsx)) |
 | `TutorialScreen` | `onUnderstood` | `"game"` | Inicia o jogo na fase atual ([`src/App.tsx`](../../src/App.tsx)) |
-| `GameScreen` | `onComplete` | `"result"` | Armazena `{ comparisons, swaps, finalArray }` em `result` ([`src/App.tsx`](../../src/App.tsx)) |
-| `ResultScreen` | `onRepeat` | `"game"` | Define `result = null`, mantendo a mesma fase ([`src/App.tsx`](../../src/App.tsx)) |
-| `ResultScreen` | `onNext` | `"game"` | Incrementa `phase` (limitado a 3), define `result = null` ([`src/App.tsx`](../../src/App.tsx)) |
-
-### Limitações Arquiteturais da Navegação Atual
-- **Sem Histórico no Navegador:** Os botões "Avançar" e "Voltar" do navegador não funcionam para transitar entre telas; clicar em "Voltar" faz o navegador sair da página.
-- **Sem Deep Linking:** Não é possível enviar um link direto para a Fase 2 ou para o Tutorial (ex.: `/fase/2` ou `/tutorial`).
-- **Loop na Fase Final:** Em [`src/App.tsx`](../../src/App.tsx), `Math.min(phase + 1, PHASES.length)` faz com que avançar na fase 3 apenas repita a fase 3, por ausência de uma tela de encerramento da campanha.
+| `GameScreen` | `onComplete` | `"result"` | Armazena `{ comparisons, swaps, errors, hintsUsed, finalArray, initialArray, history }` em `result` e consolida em `phaseResults` ([`src/App.tsx`](../../src/App.tsx)) |
+| `ResultScreen` | `onViewReplay` | `"replay"` | Transita para `ReplayScreen` preservando métricas e histórico da fase em memória ([`src/App.tsx`](../../src/App.tsx), ADR 0004) |
+| `ReplayScreen` | `onBackToResult` | `"result"` | Retorna para `ResultScreen` sem perdas ou mutações em `result` ou `phaseResults` ([`src/App.tsx`](../../src/App.tsx)) |
+| `ResultScreen` | `onRepeat` | `"game"` | Define `result = null`, reiniciando a mesma fase ([`src/App.tsx`](../../src/App.tsx)) |
+| `ResultScreen` | `onNext` | `"game"` ou `"campaign-complete"` | Se `phase < PHASES.length`, incrementa `phase`; se na fase final, transita para `"campaign-complete"` ([`src/App.tsx`](../../src/App.tsx), ADR 0002) |
+| `CampaignCompleteScreen` | `onReturnHome` | `"home"` | Limpa `phaseResults`, reseta `phase = 1` e retorna à tela inicial ([`src/App.tsx`](../../src/App.tsx)) |
+| `CampaignCompleteScreen` | `onRestartProtocol` | `"game"` | Limpa `phaseResults`, reseta `phase = 1` e inicia novo ciclo ([`src/App.tsx`](../../src/App.tsx)) |
 
 ---
 
-## 4. Fluxo de Dados entre App, GameScreen e ResultScreen
+## 4. Fluxo de Dados entre App, GameScreen, ResultScreen, ReplayScreen e CampaignCompleteScreen
 
 O tráfego de dados é unidirecional estrito descendente (via props) e ascendente (via callbacks):
 
@@ -116,27 +128,44 @@ sequenceDiagram
     participant App as src/App.tsx
     participant Game as src/screens/GameScreen.tsx
     participant Result as src/screens/ResultScreen.tsx
+    participant Replay as src/screens/ReplayScreen.tsx
+    participant Campaign as src/screens/CampaignCompleteScreen.tsx
 
     Note over App: phase = 1, currentArray = [5, 2, 4, 1]
     App->>Game: render(initialArray, phase, onComplete, key)
-    Note over Game: Usuário joga na esteira.<br/>Mutação local de boxes, swaps, comparisons.
-    Game->>App: onComplete(comparisons: 3, swaps: 2, finalArray: [1, 2, 4, 5])
-    Note over App: Salva result = {comparisons, swaps, finalArray}<br/>Chaveia screen = "result"
-    App->>Result: render(result, phase, totalPhases, onRepeat, onNext)
-    Note over Result: Renderiza estatísticas, pseudocódigo e botões.
+    Note over Game: Usuário opera via FSM pura.<br/>Dicas registradas via sessionMetrics.
+    Game->>App: onComplete({ comparisons, swaps, errors, hintsUsed, finalArray, initialArray, history })
+    Note over App: Salva result e agrega em phaseResults.<br/>Chaveia screen = "result"
+    App->>Result: render(comparisons, swaps, errors, hintsUsed, phase, hasNextPhase, onViewReplay)
+    Note over Result: Exibe métricas factuais e botão [VER EXECUÇÃO].
+    opt Aluno revisa passos
+        Result->>App: onViewReplay()
+        App->>Replay: render(initialArray, history, phase, onBackToResult)
+        Note over Replay: Navega passos (0..N) e autoplay.<br/>Derivação pura via buildReplayFrames().<br/>Pseudocódigo sincronizado via BubbleSortPseudocodePanel.
+        Replay->>App: onBackToResult()
+        App->>Result: render(...)
+    end
     Result->>App: onNext()
-    Note over App: phase = 2, result = null<br/>Chaveia screen = "game"
+    Note over App: Ao concluir Fase 3: chaveia screen = "campaign-complete"
+    App->>Campaign: render(phaseResults, totalPhases)
 ```
 
-### O Contrato de Dados `GameResult`
-Definido em [`src/App.tsx`](../../src/App.tsx):
+### O Contrato de Dados `PhaseCompleteData` e `GameResult`
+Definidos em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) e [`src/App.tsx`](../../src/App.tsx):
 ```typescript
-interface GameResult {
+export interface PhaseCompleteData {
   comparisons: number;
   swaps: number;
+  errors: number;
+  hintsUsed: number;
   finalArray: number[];
+  initialArray: number[];
+  history: readonly StepRecord[];
 }
 ```
+
+A agregação global factual é realizada pela função pura `calculateCampaignSummary` em [`src/game/campaign/campaignSummary.ts`](../../src/game/campaign/campaignSummary.ts).
+A camada de replay puro reside em [`src/game/replay/replayModel.ts`](../../src/game/replay/replayModel.ts).
 
 ### Chave de Remontagem (`key`)
 Em [`src/App.tsx`](../../src/App.tsx), o componente `GameScreen` recebe:

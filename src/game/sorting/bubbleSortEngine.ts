@@ -24,6 +24,20 @@ export function calculateTotalExpectedComparisons(arrayLength: number): number {
 }
 
 /**
+ * Calcula a porcentagem inteira de progresso real da sessão didática de Bubble Sort (0 a 100).
+ * Baseia-se no número de micro-passos formais concluídos em relação ao total teórico esperado.
+ */
+export function calculateBubbleSortProgress(state: BubbleSortState): number {
+  if (state.completed || state.arrayLength <= 1) {
+    return 100
+  }
+  const total = calculateTotalExpectedComparisons(state.arrayLength)
+  if (total <= 0) return 100
+  const completed = state.history.length
+  return Math.min(100, Math.round((completed / total) * 100))
+}
+
+/**
  * Cria o estado inicial imutável de uma sessão de Bubble Sort.
  *
  * Trata casos de borda:

@@ -23,48 +23,46 @@ O projeto foi originalmente prototipado no ambiente **Figma Make**, evoluindo pa
 | Dimensão | Estado Real Implementado no Repositório |
 | :--- | :--- |
 | **Frontend** | React 19 (`^19.0.0`), TypeScript 5.7 strict, Vite 8 (`^8.2.2`), Tailwind CSS v4 inline (`@tailwindcss/vite`), Figma Make. |
-| **Gameplay** | Bubble Sort visual point-and-click em `GameScreen.tsx`; **Engine pedagógica pura de Bubble Sort implementada em TypeScript em `src/game/sorting/` (P0.1 concluído; integração com UI pendente em P0.2 a P0.4)**; 3 fases progressivas (vetores de 4, 5 e 6 elementos). |
-| **Telas Existentes** | 4 telas ativas: `HomeScreen`, `TutorialScreen`, `GameScreen` e `ResultScreen` (chaveadas em `src/App.tsx`). |
+| **Gameplay** | Bubble Sort didático sequencial estrito integrado à **Bubble Sort Engine pura** em `GameScreen.tsx` (**Milestones P0 e P1.1 a P1.5 concluídos**); botões de decisão pedagógica `[⇄ TROCAR]` e `[= MANTER]`, bloqueio de ações fora de sequência, animação simétrica de swap, fixação determinística (`OK`), cálculo de progresso real; esteira contínua com rolagem horizontal controlada sem quebra em viewports estreitos (`overflow-x-auto min-w-max`); 3 fases progressivas (vetores de 4, 5 e 6 elementos); telemetria factual descritiva de erros e dicas; eliminação da heurística arbitrária de eficiência (ADR 0003); **Replay da Execução somente-leitura** com navegação passo a passo, autoplay auto-stop e Quadro 0 inicial derivado deterministicamente de `history` (ADR 0004); **Pseudocódigo Sincronizado no Replay** com modelo canônico de 9 instruções, destaque puro por frame e contexto de valores concretos (ADR 0005); **Homologação e UX Polish** transversal (P1.5) com acessibilidade por teclado/leitores de tela (`aria-label`, `focus-visible`), pseudocódigo canônico unificado em `ResultScreen` e consistência terminológica plena. |
+| **Telas Existentes** | 6 telas ativas: `HomeScreen`, `TutorialScreen` (interativa P1.1), `GameScreen`, `ResultScreen` (com telemetria factual, pseudocódigo canônico em português e botão `[ VER EXECUÇÃO ]`), `ReplayScreen` (reprodução passo a passo P1.3 com pseudocódigo sincronizado P1.4) e `CampaignCompleteScreen` (com resumo global e por etapa). |
 | **Backend** | **Inexistente.** Não há servidor de aplicação, microserviços, GraphQL ou endpoints REST. |
 | **Persistência** | **Inexistente.** Não há banco de dados nem armazenamento local (`localStorage` / `sessionStorage`). O estado é puramente volátil em memória. |
-| **Testes** | **Ativos para a Engine de Domínio.** Vitest (`vitest ^5.0.0`) instalado e operacional; 28 testes unitários passando 100% verde em [`src/game/sorting/bubbleSortEngine.test.ts`](../../src/game/sorting/bubbleSortEngine.test.ts) (**P0.2 concluído**). Testes de interface React e E2E permanecem planejados. |
+| **Testes** | **Ativos para Engine, Campanha, Tutorial, Sessão, Replay e Pseudocódigo.** Vitest (`vitest ^5.0.0`) instalado e operacional; **63 testes automatizados passando 100% verde** em 6 arquivos de teste: `bubbleSortEngine.test.ts` (31), `campaignSummary.test.ts` (4), `tutorialGuide.test.ts` (5), `sessionMetrics.test.ts` (5), `replayModel.test.ts` (9), `replayPseudocode.test.ts` (9). Testes de interface React e E2E permanecem planejados. |
 | **Outros Algoritmos** | Selection Sort, Insertion Sort, Merge Sort e Quick Sort são **estritamente planejados/futuros**. Não há implementação de código para eles. |
 
 ---
 
 ## 3. Prioridade Atual
 
-A prioridade **P0** central do projeto é:
+Os marcos **P0** (fundação algorítmica da esteira de triagem do Bubble Sort e encerramento da campanha) e as etapas **P1.1 a P1.5** foram integralmente concluídos:
+- **P0.1 a P0.8 Concluídos:** Motor algorítmico puro, testes Vitest, integração com `GameScreen`, bloqueio sequencial, fixação determinística, animação simétrica de troca, progresso analítico real e tela de encerramento da campanha (`CampaignCompleteScreen`);
+- **P1.1 Concluído:** Tutorial passo a passo interativo sobre vetor `[3, 1, 2]`;
+- **P1.2 Concluído:** Telemetria pedagógica local da sessão (`errors` canônicos da engine e `hintsUsed` da camada de sessão), relatório global em 5 cartões e eliminação definitiva da heurística de eficiência (ADR 0003);
+- **P1.3 Concluído:** Replay visual da execução derivado puramente de `history: readonly StepRecord[]` (Quadro 0, SWAP/KEEP, autoplay com parada automática, navegação passo a passo e preservação de métricas em memória — ADR 0004);
+- **P1.4 Concluído:** Pseudocódigo sincronizado com o replay (`BubbleSortPseudocodePanel`), derivação pura de destaque por frame (`getPseudocodeHighlight`), modelo canônico de 9 instruções, preservação do código genérico e valores concretos separados (ADR 0005);
+- **P1.5 Concluído:** Homologação completa e UX Polish do módulo Bubble Sort: esteira contínua e sem quebras em mobile (`overflow-x-auto min-w-max`), acessibilidade por teclado/leitores de tela (`aria-label`, anéis `focus-visible`), `ResultScreen` alinhado com pseudocódigo canônico em português, redução de ruído cognitivo (remoção de tags `#` redundantes no replay) e validação da compatibilidade terminológica com a futura Narrative Layer.
 
-> **Transformar o gameplay de Bubble Sort atual em uma execução pedagógica estrita do algoritmo.**
-
-Com a camada de domínio puro e a suíte completa de testes automatizados concluídas (**P0.1 e P0.2 concluídos** em [`src/game/sorting/`](../../src/game/sorting/)), as próximas etapas de P0 envolvem conectar essa lógica à interface:
-- Controle explícito de passada (`passIndex` de $0$ a $n-2$);
-- Controle do ponteiro interno de comparação (`comparisonIndex` de $0$ a $n - 2 - \text{passIndex}$);
-- Destaque mandatório do par de elementos esperado (`currentPair = [j, j+1]`);
-- Varredura determinística da esquerda para a direita na esteira;
-- Decisão consciente do jogador: acionar troca física (*Swap*) se fora de ordem ou confirmar manutenção (*Keep/Pass*) se em ordem;
-- Bloqueio de cliques fora do par ativo ou feedback explicativo formativo imediato;
-- Medição e exibição do progresso real do algoritmo (passadas concluídas vs. total necessário);
-- Travamento visual definitivo dos elementos fixados (`LOCKED`) no limite ordenado (`sortedBoundary`);
-- Registro de histórico passo a passo das operações executadas;
-- Conclusão correta e transparente de cada passada e da fase.
-
-### Próximas 3 a 5 Tarefas Mais Importantes
-1. **Integração da Engine com a UI (P0.3/P0.4):** Conectar `src/game/sorting/` a `src/screens/GameScreen.tsx`, destacando o par mandatório corrente $[j, j+1]$ e adicionando a ação explícita *Trocar vs. Manter Ordem*;
-2. **Correção do Bug de Animação de Troca (P0.7):** Ajustar o ciclo de estado em `GameScreen.tsx` para garantir translação visual bidirecional (`left` e `right`);
-3. **Resolução do Encerramento da Fase 3:** Tratar o término da última fase em `src/App.tsx` para apresentar tela de vitória global da campanha ao invés de reiniciar a fase 3;
-4. **Introdução de Persistência Local Básica (P1):** Configurar gravação de progresso e preferências do operador via `localStorage`.
+### Próximas Tarefas Mais Importantes
+1. **Introdução de Persistência Local Básica (P1.6):** Gravação de progresso e preferências do operador via `localStorage`;
+2. **Pontuação Pedagógica e Tempo como Recurso Secundário (P1.7):** Pontuação baseada em precisão sem cronômetros punitivos;
+3. **Modo Desafio / Variante Early Exit (P1.8):** Adicionar fase com término antecipado caso uma passada ocorra sem trocas.
 
 ---
 
-## 4. Principal Problema Atual
+## 4. Evolução Recente: Modo Replay, Pseudocódigo Sincronizado e Homologação UX
 
-No protótipo atual, a tela [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) permite que o usuário selecione **qualquer par de caixas vizinhas** (qualquer índice adjacente onde $|a - b| = 1$), em qualquer ordem e em qualquer ponto do vetor.
+Com a conclusão dos marcos **P1.1 a P1.5**:
+- O `TutorialScreen` transformou-se em uma experiência prática interativa guiada;
+- A telemetria da sessão passou a ser **estritamente descritiva e factual**, respondendo *"O que aconteceu durante a sessão?"* sem notas arbitrárias;
+- A contagem de decisões incorretas (`errors`) advém unicamente de `gameState.errors` na engine pura;
+- A contagem de dicas (`hintsUsed`) é gerenciada de forma isolada e imutável em `src/game/session/sessionMetrics.ts` (ADR 0003);
+- A fórmula arbitrária de "Eficiência (%)" foi totalmente removida de `ResultScreen.tsx`;
+- A tela final `CampaignCompleteScreen` expõe 5 cartões factuais consolidados;
+- O **Modo Replay (`ReplayScreen`)** viabiliza revisão retrospectiva completa passo a passo da fase concluída sem reexecutar o algoritmo e sem resetar métricas (ADR 0004);
+- O **Pseudocódigo Sincronizado (`BubbleSortPseudocodePanel`)** conecta a ação da esteira à sintaxe algorítmica formal de forma determinística, destacando o fluxo de execução (`INITIAL`, `KEEP`, `SWAP`) sem reexecução redundante (ADR 0005);
+- A **Homologação e UX Polish (P1.5)** eliminou quebras de layout nas esteiras em mobile, adicionou anéis de foco acessíveis, descrições para leitores de tela e unificou o pseudocódigo canônico em toda a aplicação.
 
-Embora isso permita ordenar o vetor de forma livre (como um quebra-cabeça de trocas locais), **não executa nem ensina a sequência algorítmica formal do Bubble Sort**. O estudante pode ordenar o vetor da direita para a esquerda, pular pares fora de ordem ou resolver partes isoladas sem compreender o laço externo ($i$), o laço interno ($j$) nem a garantia de fixação do maior elemento ao final de cada varredura.
-
-> *Detalhamento completo e especificação da FSM corretiva:* consulte [Sorting Engine](./04-sorting-engine.md).
+> *Detalhamento completo e especificações:* consulte [03 — Frontend](./03-frontend.md), [04 — Sorting Engine](./04-sorting-engine.md), [ADR 0001](../../docs/adr/0001-bubble-sort-fsm-ui-integration.md), [ADR 0002](../../docs/adr/0002-campaign-completion-memory-state.md), [ADR 0003](../../docs/adr/0003-session-metrics-engine-decoupling.md), [ADR 0004](../../docs/adr/0004-execution-replay-state-derivation.md) e [ADR 0005](../../docs/adr/0005-replay-synchronized-pseudocode.md).
 
 ---
 
@@ -75,27 +73,37 @@ flowchart TD
     Browser["Navegador Web (Cliente)"]
     
     subgraph FrontendCurrent["Frontend React (Implementado)"]
-        ReactUI["Interface de Telas (App.tsx)<br/>Home | Tutorial | Game | Result"]
-        GameState["Estado Local React (useState)<br/>boxes, selected, phase, metrics"]
+        ReactUI["Interface de Telas (App.tsx)<br/>Home | Tutorial | Game | Result | Replay | Campaign"]
+        GameScreen["GameScreen.tsx<br/>Decisões TROCAR / MANTER & Animação 500ms"]
+        ReplayScreen["ReplayScreen.tsx<br/>Auditoria Passo a Passo (Passo 0..N, Autoplay)"]
+        PseudocodeUI["BubbleSortPseudocodePanel.tsx<br/>Pseudocódigo Sincronizado & Valores Concretos"]
     end
     
-    subgraph EngineDomain["Camada de Domínio Puro (IMPLEMENTADA - P0.1)"]
-        SortingEngine["Sorting Engine Pura (src/game/sorting/)<br/>createBubbleSortState, executeBubbleSortStep"]
+    subgraph EngineDomain["Camada de Domínio Puro (IMPLEMENTADA)"]
+        SortingEngine["Sorting Engine Pura (src/game/sorting/)<br/>createBubbleSortState, executeUserStep, getExpectedComparison"]
         BubbleSort["BubbleSortState & FSM Canônica (n-1 passadas)"]
+        ReplayModel["Modelo Puro de Replay (src/game/replay/)<br/>buildReplayFrames(initialArray, history)"]
+        ReplayPseudocode["Mapeamento de Pseudocódigo (src/game/replay/)<br/>getPseudocodeHighlight(frame)"]
     end
-
+    
     subgraph FutureAlgorithms["Outros Algoritmos (Planejados - P2)"]
         OtherAlgorithms["Selection / Insertion (Futuro)"]
     end
 
     Browser --> ReactUI
-    ReactUI --> GameState
-    GameState -.->|Integração Pendente (P0.2 a P0.4)| SortingEngine
+    ReactUI --> GameScreen
+    ReactUI --> ReplayScreen
+    ReplayScreen --> PseudocodeUI
+    GameScreen ==>|Fonte Única de Verdade (P0.3)| SortingEngine
     SortingEngine --> BubbleSort
+    BubbleSort ==>|StepRecord History| ReplayModel
+    ReplayModel ==>|ReplayFrame[]| ReplayScreen
+    ReplayModel --> ReplayPseudocode
+    ReplayPseudocode ==>|Highlight & Contexto| PseudocodeUI
     SortingEngine -.-> OtherAlgorithms
 ```
 
-> **Aviso de Arquitetura:** A **camada de domínio puro** da Sorting Engine foi implementada em TypeScript desacoplado de React em [`src/game/sorting/`](../../src/game/sorting/) (**P0.1 concluído**). A **integração com a interface** dentro de [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) é a etapa **EM PLANEJAMENTO (P0.2 a P0.4)**.
+> **Aviso de Arquitetura:** A **integração da Sorting Engine com o GameScreen, ReplayScreen e BubbleSortPseudocodePanel** está concluída (**P0.1 a P1.4 implementados e validados**). O código-fonte visual consome a FSM, o modelo de replay e a sincronização pura de pseudocódigo como fontes canônicas de verdade.
 
 ---
 
@@ -287,16 +295,14 @@ Como ainda não foram realizados experimentos controlados com estudantes, qualqu
 
 ## 17. Riscos Abertos
 
-Principais dívidas técnicas e pedagógicas registradas na Wiki:
+Principais dívidas técnicas e pedagógicas registradas na Wiki após a conclusão do Milestone P0 e ciclo P1:
 
-1. **Bubble Sort Não Estrito na UI:** A camada de domínio pura determinística já foi implementada em `src/game/sorting/` (P0.1), mas o componente visual `GameScreen.tsx` ainda opera com seleção livre até a conclusão da integração da interface (P0.2 a P0.4) (*Documentado em [04 — Sorting Engine](./04-sorting-engine.md)*);
-2. **Bug na Animação de Troca:** A chamada `setSelected(null)` antes do `setTimeout` em `GameScreen.tsx:L68` faz com que ambas as caixas recebam a classe de animação `left` (*Documentado em [02 — Arquitetura](./02-system-architecture.md)* e [04 — Sorting Engine](./04-sorting-engine.md)*);
-3. **Contador de Progresso Heurístico:** A lógica atual em `GameScreen.tsx:L130-L136` infere caixas ordenadas através de varredura sufixal arbitrária, e não pelo avanço real das passadas do algoritmo (*Documentado em [04 — Sorting Engine](./04-sorting-engine.md)*);
-4. **Marcação OK Heurística:** Caixas recebem borda verde quando estão localmente menores que a vizinha, mesmo fora de suas posições finais (*Documentado em [04 — Sorting Engine](./04-sorting-engine.md)*);
-5. **Pseudocódigo Estático:** O bloco de código exibido em `ResultScreen.tsx` é estático e não acompanha as ações do usuário em tempo real (*Documentado em [03 — Front-End](./03-frontend.md)*);
-6. **Encerramento da Última Fase:** Na fase 3, clicar em "Próxima Fase" reinicia a própria fase 3 devido a `Math.min(phase + 1, PHASES.length)` em `App.tsx:L32` (*Documentado em [02 — Arquitetura](./02-system-architecture.md)*);
-7. **Ausência de Testes em Componentes React/UI:** A camada de domínio da Sorting Engine agora possui 100% de cobertura unitária com Vitest (**P0.2 concluído**), mas os componentes React e os fluxos visuais ainda não possuem testes automatizados (*Documentado em [08 — Qualidade e Testes](./08-testing-and-quality.md)*);
-8. **Volatilidade Total de Estado:** Recarregar a página apaga todo o histórico e progresso do jogador (*Documentado em [07 — Backend e Persistência](./07-backend-and-persistence.md)*).
+1. **Ausência de Persistência Local (P1.6):** Recarregar a página (F5) reinicia o progresso em memória por ausência de gravação em `localStorage` (*Documentado em [07 — Backend e Persistência](./07-backend-and-persistence.md)*);
+2. **Ausência de Testes em Componentes React/UI:** A camada de domínio da Sorting Engine, Agregação de Campanha, Guia do Tutorial, Sessão, Replay e Pseudocódigo possui 100% de cobertura unitária com Vitest (63 testes passando), mas os componentes visuais React e os fluxos de ponta a ponta ainda não possuem testes automatizados de renderização/E2E (*Documentado em [08 — Qualidade e Testes](./08-testing-and-quality.md)*);
+3. **Variante Early Exit Não Implementada:** O Bubble Sort atual sempre executa todas as $(n-1)$ passadas mesmo se o vetor estabilizar precocemente;
+4. **Camada Narrativa Completa Pendente:** Personagens e história detalhada da estação estão planejados para etapa futura após a base dos algoritmos.
+
+> *Dívidas resolvidas em P0 e P1:* Bubble Sort estrito na UI (resolvido por FSM), bug de animação de swap (resolvido por `animatingPair`), progresso real (resolvido por `calculateBubbleSortProgress`), fixação formal de caixas (resolvido por `getSortedIndices` e `sortedBoundary`), encerramento da campanha sem loop (resolvido com `CampaignCompleteScreen` via ADR 0002), telemetria descritiva sem eficiência arbitrária (resolvido via ADR 0003), replay passo a passo sem reexecução (resolvido via ADR 0004), pseudocódigo sincronizado e unificado com o canônico em português (resolvido em P1.4 e P1.5 via ADR 0005) e layout contínuo de esteira em mobile com acessibilidade por teclado/leitores de tela (resolvido em P1.5).
 
 ---
 
@@ -305,38 +311,44 @@ Principais dívidas técnicas e pedagógicas registradas na Wiki:
 ```mermaid
 timeline
     title Roadmap Evolutivo do Sorting Station
-    section P0 : Imediato
-        Bubble Sort Pedagógico Real : FSM sequencial estrita
-        Correções Críticas : Animação de swap e encerramento Fase 3
-    section P1 : Curto Prazo
-        Refinamentos Didáticos : Tutorial interativo e pseudocódigo ativo
-        Persistência Local : Salvamento via localStorage
+    section P0 : Imediato (CONCLUÍDO)
+        Bubble Sort Pedagógico Real : FSM sequencial estrita (IMPLEMENTADO)
+        Correção Animação Swap : Animação simétrica (IMPLEMENTADO)
+        Encerramento Fase 3 : Homologação da Estação (IMPLEMENTADO - P0.8)
+    section P1 : Curto Prazo (EM ANDAMENTO)
+        Tutorial Interativo : Mini-treinamento com vetor [3,1,2] (IMPLEMENTADO - P1.1)
+        Telemetria Factual : Erros e dicas desacoplados (IMPLEMENTADO - P1.2)
+        Modo Replay : Revisão passo a passo (IMPLEMENTADO - P1.3)
+        Pseudocódigo Sincronizado : Destaque formal por frame (IMPLEMENTADO - P1.4)
+        Homologação & UX Polish : Esteira contínua e acessibilidade (IMPLEMENTADO - P1.5)
+        Persistência Local : Salvamento via localStorage (PENDENTE - P1.6)
     section P2 : Médio Prazo
         Selection Sort : Mecânica de Scanner de Mínimo
         Insertion Sort : Mecânica de Desvio e Encaixe
     section P3 : Longo Prazo
         Algoritmos Avançados : Merge Sort, Quick Sort e Heap Sort
+        Narrative Layer Completa : Diálogos de operadores e lore da estação
         Pesquisa Empírica : Telemetria acadêmica e validação de aprendizagem
 ```
 
-> *Para o detalhamento das 10 tarefas prioritárias e matriz completa de riscos:* consulte [10 — Roadmap](./10-roadmap.md).
+> *Para o detalhamento das tarefas prioritárias e matriz completa de riscos:* consulte [10 — Roadmap](./10-roadmap.md).
 
 ---
 
 ## 19. Índice da Wiki
 
-Catálogo com link relativo e recomendação de leitura para todos os 13 documentos temáticos:
+Catálogo com link relativo e recomendação de leitura para todos os documentos temáticos e operacionais:
 
 - [00 — Inventário Factual do Repositório](./00-repository-inventory.md)  
-  *Quando ler:* Antes de iniciar qualquer trabalho, para conhecer todos os 26 arquivos reais, toolchain e dependências.
+  *Quando ler:* Antes de iniciar qualquer trabalho, para conhecer todos os arquivos reais, toolchain e dependências.
 - [01 — Visão de Produto e Modelo Pedagógico](./01-product-vision.md)  
   *Quando ler:* Para entender o problema educacional, a metáfora da central logística e os princípios norteadores de design.
 - [02 — Arquitetura do Sistema e Fluxo de Dados](./02-system-architecture.md)  
-  *Quando ler:* Para compreender o chaveamento de telas em `App.tsx`, ciclo de vida do estado e o plano de desacoplamento da engine.
+  *Quando ler:* Para compreender o chaveamento de telas em `App.tsx`, ciclo de vida do estado e a integração da engine.
 - [03 — Manual de Engenharia Front-End](./03-frontend.md)  
   *Quando ler:* Ao criar ou modificar telas e componentes React, tipagens, props, animações e convenções de código.
 - [04 — Motor de Ordenação e Máquina de Estados](./04-sorting-engine.md)  
-  *Quando ler:* Antes de alterar a lógica de ordenação, para compreender a FSM de Bubble Sort e o plano para Selection/Insertion.
+  *Quando ler:* Antes de alterar a lógica de ordenação, para compreender a FSM de Bubble Sort e o plano para novos algoritmos.
 - [05 — Sistema de Design, UX e Vocabulário](./05-ux-design-system.md)  
   *Quando ler:* Ao ajustar estilos visuais, tokens cromáticos, fontes (*Orbitron, Space Mono, Exo 2*) e componentes visuais.
 - [06 — Ambiente de Desenvolvimento e Figma Make](./06-development-environment.md)  
@@ -344,7 +356,7 @@ Catálogo com link relativo e recomendação de leitura para todos os 13 documen
 - [07 — Backend, Persistência e Limites](./07-backend-and-persistence.md)  
   *Quando ler:* Ao trabalhar com persistência em `localStorage` ou avaliar a introdução de infraestrutura de servidor e LGPD.
 - [08 — Testes, Qualidade e Definition of Done](./08-testing-and-quality.md)  
-  *Quando ler:* Para consultar a pirâmide de testes recomendada e os checklists de Definition of Done (DoD) antes de finalizar tarefas.
+  *Quando ler:* Para consultar a pirâmide de testes com Vitest e os checklists de Definition of Done (DoD).
 - [09 — Processo de Compilação, Build e Deploy](./09-build-deploy.md)  
   *Quando ler:* Ao preparar compilações de produção, validar bundles `dist/` e inspecionar scripts de deploy do Figma Make.
 - [10 — Roadmap de Evolução Técnica e Pedagógica](./10-roadmap.md)  
@@ -353,6 +365,8 @@ Catálogo com link relativo e recomendação de leitura para todos os 13 documen
   *Quando ler:* Ao propor mudanças estruturais ou registrar uma nova decisão arquitetural no repositório.
 - [12 — Pedagogia, Rastreabilidade e Rigor Científico](./12-pedagogy-and-academic-traceability.md)  
   *Quando ler:* Ao preparar materiais didáticos, redigir artigos acadêmicos ou alinhar mecânicas a conceitos teóricos.
+- [QA — Checklist Operacional de Gameplay](./qa-gameplay-checklist.md)  
+  *Quando ler:* Roteiro operacional para validar manualmente alterações de gameplay, animações e regressões de FSM.
 
 ---
 

@@ -31,7 +31,16 @@ src/
 │   ├── HomeScreen.tsx   # Tela de boas-vindas e apresentação temática da Central Logística
 │   ├── TutorialScreen.tsx # Tutorial explicativo com demonstração cíclica animada
 │   ├── GameScreen.tsx   # Tela de jogo interativa: esteira, seleção e lógica de ordenação
-│   └── ResultScreen.tsx # Relatório de término de fase: estatísticas e pseudocódigo
+│   ├── ResultScreen.tsx # Relatório de término de fase: estatísticas e pseudocódigo
+│   └── CampaignCompleteScreen.tsx # Relatório final de homologação do protocolo com resumo global
+├── game/
+│   ├── campaign/        # Agregação pura de métricas da campanha (PhaseResult, calculateCampaignSummary)
+│   │   ├── campaignSummary.ts
+│   │   └── campaignSummary.test.ts
+│   ├── sorting/         # Engine pedagógica pura de Bubble Sort (FSM)
+│   └── tutorial/        # Guia pedagógico e definições do tutorial interativo
+│       ├── tutorialGuide.ts
+│       └── tutorialGuide.test.ts
 └── components/          # Componentes visuais atômicos e reutilizáveis
     ├── GameButton.tsx   # Botão estilizado com variantes sci-fi (primary, secondary, danger, ghost)
     ├── InstructionPanel.tsx # Faixa de feedback ao usuário com 4 tipos de severidade
@@ -53,15 +62,21 @@ flowchart LR
     Tutorial -->|"onUnderstood"| Game["GameScreen\n(Ordenação Ativa)"]
     Game -->|"onComplete"| Result["ResultScreen\n(Estatísticas)"]
     Result -->|"onRepeat"| Game
-    Result -->|"onNext"| Game
+    Result -->|"onNext (fases 1 e 2)"| Game
+    Result -->|"onNext (fase 3)"| Complete["CampaignCompleteScreen\n(Protocolo Concluído)"]
+    Complete -->|"onReturnHome"| Home
+    Complete -->|"onRestartProtocol"| Game
 ```
 
 ### 3.1. `src/App.tsx` (Componente Raiz)
 - **Responsabilidades:**
-  - Armazenar o estado global de navegação (`screen`: `"home" | "tutorial" | "game" | "result"`) ([`src/App.tsx`](../../src/App.tsx));
+  - Armazenar o estado global de navegação (`screen`: `"home" | "tutorial" | "game" | "result" | "campaign-complete"`) ([`src/App.tsx`](../../src/App.tsx));
   - Armazenar o número da fase ativa (`phase`: `1 | 2 | 3`) ([`src/App.tsx`](../../src/App.tsx));
   - Armazenar o último resultado recebido (`result`: `GameResult | null`) ([`src/App.tsx`](../../src/App.tsx));
+  - Armazenar em memória os resultados acumulados de cada fase concluída (`phaseResults`: `PhaseResult[]`) para o relatório de encerramento;
   - Definir a matriz de fases do Bubble Sort (`PHASES` em [`src/App.tsx`](../../src/App.tsx));
+  - Determinar semanticamente se há próxima fase (`hasNextPhase = phase < PHASES.length`), eliminando condicionais hardcoded;
+  - Orquestrar a transição para `CampaignCompleteScreen` ao finalizar a última fase (`PHASES.length`), eliminando o bug de repetição em loop;
   - Forçar a remontagem de `GameScreen` através da prop `key={'game-phase-${phase}'}` ([`src/App.tsx`](../../src/App.tsx)).
 
 ### 3.2. `src/screens/HomeScreen.tsx`
@@ -73,33 +88,81 @@ flowchart LR
 - **Callbacks:** `onStart: () => void`, `onHowToPlay: () => void`.
 
 ### 3.3. `src/screens/TutorialScreen.tsx`
-- **Responsabilidades:** Explicar o funcionamento elementar do Bubble Sort de forma visual e intuitiva antes do início do turno.
+- **Responsabilidades:** Mini-treinamento interativo guiado que ensina fazendo a lógica elementar do Bubble Sort antes do início do turno real na Fase 1.
 - **Destaques de Implementação:**
-  - Mantém um `setInterval` de 3 segundos alternando um ciclo demonstrativo entre 3 estados: `"before" → "comparing" → "after"` ([`src/screens/TutorialScreen.tsx`](../../src/screens/TutorialScreen.tsx));
-  - Demonstra a comparação entre uma caixa de valor `8` e uma de valor `3`, ilustrando a necessidade de troca quando $8 > 3$;
-  - Exibe cartões didáticos de regras operacionais ("1. Compare vizinhos", "2. Troque se fora de ordem", "3. Repita até estabilizar").
+  - **Integração com a Sorting Engine:** Não possui código duplicado de Bubble Sort; utiliza diretamente `createBubbleSortState([3, 1, 2])`, `executeUserStep`, `getExpectedComparison` e `getSortedIndices`;
+  - **Cenário Pedagógico Determinístico `[3, 1, 2]`:**
+    - **Etapa 1:** Compara par 3 e 1. Decisão correta: `[⇄ TROCAR]`. Gera vetor `[1, 3, 2]` após animação simétrica de troca;
+    - **Etapa 2:** Compara par 3 e 2. Decisão correta: `[⇄ TROCAR]`. Gera vetor `[1, 2, 3]`. Conclui a Passada 1, exibindo o elemento 3 consolidado (`OK`);
+    - **Explicação de Passada:** Callout didático explicando que uma passada é a varredura da esquerda para a direita pela parte ainda desordenada da esteira, estabilizando a maior carga restante na posição definitiva;
+    - **Etapa 3:** Compara par 1 e 2. Decisão correta: `[= MANTER]`. Demonstra que o algoritmo didático continua até a verificação formal de todos os pares previstos;
+  - **Tratamento Formativo de Erro:** Se o operador escolher uma ação incorreta, o estado algorítmico NÃO avança, o vetor permanece inalterado e o `InstructionPanel` exibe explicação formativa orientando nova tentativa;
+  - **Conclusão Explícita:** Painel comemorativo de encerramento destacando as competências praticadas, com CTA "INICIAR FASE 1 →" e opção "↺ REPETIR TREINAMENTO";
+  - **Guarda Síncrona e Animações:** Utiliza `isActionLockedRef` e `animatingPair` com duração de 500ms, idêntica à esteira do `GameScreen`.
 - **Callbacks:** `onBack: () => void`, `onUnderstood: () => void`.
 
 ### 3.4. `src/screens/GameScreen.tsx`
-- **Responsabilidades:** Interface interativa de ordenação da fase atual.
+- **Responsabilidades:** Interface interativa de ordenação da fase atual integrada deterministicamente à Bubble Sort Engine.
 - **Destaques de Implementação:**
-  - Inicializa o vetor de caixas local a partir de `initialArray`: `useState<number[]>([...initialArray])`;
-  - Rastreia a seleção da primeira caixa através do índice `selected: number | null`;
-  - Permite desmarcar a caixa clicando nela novamente;
-  - Exige adjacência para comparação (`Math.abs(selected - index) === 1`);
-  - Dispara a animação de troca e agenda um `setTimeout` de 500ms para efetivar a permuta dos valores no array;
-  - Integra a funcionalidade de Dica (`handleHint`) chamando `findNextSwap(boxes)`;
-  - Monitora `isSorted(boxes)` e dispara `onComplete(comparisons, swaps, finalArray)`.
-- **Callbacks:** `onComplete: (comparisons: number, swaps: number, finalArray: number[]) => void`.
+  - Inicializa e mantém o estado algorítmico através de `createBubbleSortState(initialArray)`, tornando a engine a única fonte de verdade;
+  - Rastreia o par obrigatório sob comparação através de `getExpectedComparison(gameState)`, eliminando seleções arbitrárias de caixas;
+  - Mecânica pedagógica de decisão: oferece botões `[⇄ TROCAR]` e `[= MANTER]` validados via `executeUserStep(gameState, decision)`;
+  - Cliques informativos nas caixas (`handleBoxClick`): orientam o jogador sem violar a sequência algorítmica;
+  - Animação de troca física desacoplada (`animatingPair: { left, right }`): a caixa esquerda translada para a direita (`animate-swap-right`) e a direita para a esquerda (`animate-swap-left`) durante 500ms com bloqueio total de controles;
+  - Guarda síncrona com `isActionLockedRef`: protege contra condições de corrida por múltiplos cliques ultra-rápidos antes do ciclo de renderização do React;
+  - Feedback formativo contextualizado: exibe explicações conceituais claras sem antecipar a resposta antes da tomada de decisão;
+  - Dica pedagógica (`handleHint`): instrui exclusivamente sobre o par atual em foco sem avançar o ponteiro; uso intencional é contabilizado de forma isolada via `sessionMetrics.hintsUsed` (ADR 0003);
+  - Progresso real: calculado via `calculateBubbleSortProgress(gameState)` ($\frac{\text{passos}}{\text{total teórico}} \times 100\%$);
+  - Consolidação formal: elementos fixados (`OK`) são derivados diretamente de `getSortedIndices(gameState)`;
+  - **Esteira Contínua em Telas Estreitas (P1.5):** Layout com contêiner rolável horizontalmente (`overflow-x-auto min-w-max`) sem `flex-wrap`, mantendo a metáfora linear contínua da esteira com 4, 5 e 6 caixas sem quebras de linha em dispositivos móveis;
+  - **Avaliação de Carga Cognitiva e Pseudocódigo no Gameplay (P1.5):** O painel de pseudocódigo sincronizado é intencionalmente restrito ao `ReplayScreen`. No `GameScreen`, o operador necessita de foco perceptivo-motor na tríade `Ação Atual` $\rightarrow$ `Consequência Imediata` $\rightarrow$ `Contexto Algorítmico`. Exibir 9 linhas de pseudocódigo em tempo real durante o jogo geraria divisão de atenção (*split-attention effect*), forçaria rolagem vertical contínua e aumentaria a carga cognitiva extrínseca sem benefício pedagógico comprovado;
+  - Conclusão segura: monitora `gameState.completed` e dispara `onComplete(data: PhaseCompleteData)` após temporizador calibrado de 1200ms de feedback comemorativo.
+- **Callbacks:** `onComplete: (data: PhaseCompleteData) => void` (contendo `comparisons`, `swaps`, `errors`, `hintsUsed`, `finalArray`).
 
 ### 3.5. `src/screens/ResultScreen.tsx`
-- **Responsabilidades:** Apresentar a avaliação de desempenho após a conclusão da ordenação.
+- **Responsabilidades:** Apresentar a avaliação de desempenho descritiva após a conclusão da ordenação da fase corrente.
 - **Destaques de Implementação:**
-  - Renderiza o vetor final resultante utilizando caixas com a flag `sorted={true}`;
-  - Apresenta contadores de comparações, trocas efetuadas e eficiência calculada (`swaps === 0 ? 100 : Math.max(20, Math.round(100 - swaps * 8))`);
-  - Exibe o bloco de pseudocódigo do Bubble Sort com linha 19 destacada em ciano;
-  - Botão "↺ REPETIR FASE" aciona `onRepeat()`; botão "PRÓXIMA FASE →" aciona `onNext()`.
-- **Callbacks:** `onRepeat: () => void`, `onNext: () => void`.
+  - Renderiza o vetor final resultante consolidado com suporte a rolagem horizontal segura em mobile;
+  - Apresenta contadores puramente factuais sob o título "MÉTRICAS DA FASE": Comparações (`comparisons`), Trocas (`swaps`), Decisões Incorretas (`errors`) e Dicas Utilizadas (`hintsUsed`);
+  - **Eliminação de Heurística:** Remoção definitiva da antiga métrica arbitrária de "Eficiência (%)", substituída integralmente pela telemetria factual descritiva (ADR 0003);
+  - **Pseudocódigo Canônico em Português (P1.5):** Utiliza a representação canônica padronizada `BUBBLE_SORT_PSEUDOCODE`, eliminando código legado em inglês;
+  - **Responsividade e Scroll Seguro:** Layout com contêiner rolável verticalmente (`overflow-y-auto min-h-full`) e grid responsivo `grid-cols-1 md:grid-cols-2`, impedindo cortes em telas de baixa altura;
+  - Suporta a prop semântica `hasNextPhase`: exibe "PRÓXIMA FASE →" nas fases 1 e 2, e "CONCLUIR PROTOCOLO →" na última fase (Fase 3);
+  - Botão "▶ VER EXECUÇÃO" aciona `onViewReplay()` para transição ao modo replay sem perda de dados (ADR 0004);
+  - Botão "↺ REPETIR FASE" aciona `onRepeat()`; botão principal aciona `onNext()`.
+- **Callbacks:** `onRepeat: () => void`, `onNext: () => void`, `onViewReplay?: () => void`.
+
+### 3.6. `src/screens/CampaignCompleteScreen.tsx`
+- **Responsabilidades:** Tela de homologação técnica e encerramento do Protocolo Bubble ao término de todas as fases da campanha.
+- **Destaques de Implementação:**
+  - Apresenta o fechamento narrativo do setor de triagem ("Protocolo Bubble Concluído", sem falsas afirmações de aprendizado absoluto antes de pesquisas empíricas);
+  - Painel de 5 métricas factuais globais calculadas via `calculateCampaignSummary`:
+    - Fases Concluídas ($3 / 3$);
+    - Comparações Totais acumuladas ($6 + 10 + 15 = 31$);
+    - Trocas Totais acumuladas ($5 + 6 + 9 = 20$);
+    - Decisões Incorretas Totais (`totalErrors`);
+    - Dicas Utilizadas Totais (`totalHintsUsed`).
+  - Relatório discriminado por etapa em grid responsivo com os 4 contadores (`comparisons`, `swaps`, `errors`, `hintsUsed`) e miniatura dos vetores ordenados finais;
+  - Botão "⌂ VOLTAR AO INÍCIO" (`onReturnHome`): reseta todos os resultados em memória, reseta para Fase 1 e retorna para `HomeScreen`;
+  - Botão "↺ REJOGAR PROTOCOLO" (`onRestartProtocol`): reseta todos os resultados em memória e inicia uma nova execução limpa na Fase 1.
+- **Callbacks:** `onReturnHome: () => void`, `onRestartProtocol?: () => void`.
+
+### 3.7. `src/screens/ReplayScreen.tsx`
+- **Responsabilidades:** Reprodução visual somente-leitura da execução de qualquer fase concluída do Protocolo Bubble Sort (P1.3, ADR 0004), com pseudocódigo sincronizado em tempo real (P1.4, ADR 0005).
+- **Destaques de Implementação:**
+  - Consome os quadros puros imutáveis derivados por `buildReplayFrames(initialArray, history)`;
+  - Exibe o **Quadro 0 (Estado Inicial)** com a carga antes do primeiro passo, seguido pelos quadros sequenciais (1..N);
+  - Mostra em cada passo: número do passo (`PASSO X / Y`), badge de ação (`INITIAL`, `SWAP`, `KEEP`), valores comparados, passada, comparação da passada e explicação factual concisa;
+  - Destaque cinestésico do par ativo através de `NumberedBox` com prop `selected={true}` e consolidação de caixas ordenadas com `sorted={true}`;
+  - **Eliminação de Rótulos Redundantes (P1.5):** O `NumberedBox` já inclui internamente a identificação `#{index + 1}` no topo da caixa; rótulos duplicados abaixo das caixas foram removidos para despoluir a esteira de replay;
+  - **Esteira com Rolagem Horizontal Segura:** Contêiner rolável `overflow-x-auto min-w-max` assegurando visualização sem quebras para as 6 caixas da Fase 3 em qualquer dispositivo;
+  - **Pseudocódigo Sincronizado (P1.4):** Integração do componente reutilizável `BubbleSortPseudocodePanel`, destacando a instrução exata do frame e apresentando separadamente os valores concretos avaliados;
+  - Barra de progresso percentual da execução;
+  - Layout responsivo com rolagem vertical suave (`overflow-y-auto`) em resoluções de altura reduzida;
+  - Painel de controles completo: `[↺ REINICIAR]`, `[← ANTERIOR]`, `[▶ REPRODUZIR]` / `[⏸ PAUSAR]` e `[PRÓXIMO →]`;
+  - Autoplay com temporizador de 1200ms que pausa automaticamente no último passo ou ao toque de navegação manual;
+  - Botão "← VOLTAR AO RESULTADO" (`onBackToResult`): retorna para `ResultScreen` preservando 100% das métricas em memória.
+- **Props:** `initialArray: number[]`, `history: readonly StepRecord[]`, `phase: number`, `onBackToResult: () => void`.
 
 ---
 
@@ -112,19 +175,24 @@ Representação visual das caixas transportadas pela esteira.
 interface NumberedBoxProps {
   value: number;                  // Número inteiro contido na caixa
   index: number;                  // Índice 0-based no vetor (exibido como #index+1)
-  selected?: boolean;             // Borda âmbar/pulsante indicando foco ativo
-  disabled?: boolean;             // Reduz opacidade e remove cursor pointer
+  selected: boolean;              // Borda ciano e badge "PAR" indicando foco ativo
+  disabled: boolean;              // Reduz opacidade e remove cursor pointer
   sorted?: boolean;               // Borda verde e badge "OK" indicando elemento fixado
-  onClick?: () => void;           // Callback de seleção
+  badge?: string;                 // Etiqueta personalizada opcional (default: "PAR" | "OK" | "PKG")
+  onClick: (index: number) => void; // Callback de interação
   animating?: "left" | "right" | null; // Dispara animate-swap-left ou animate-swap-right
-  size?: "sm" | "md" | "lg";      // Dimensão da caixa (default: "md")
+  size?: "sm" | "md" | "lg";      // Dimensão da caixa (default: "lg")
 }
 ```
 
 - **Classes visuais aplicadas dinamicamente:**
-  - `selected`: `border-amber-400 bg-amber-950/40 shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-pulse-border`;
-  - `sorted`: `border-emerald-400 bg-emerald-950/30 shadow-[0_0_12px_rgba(16,185,129,0.3)]`;
-  - `default`: `border-cyan-500/40 bg-[#0d1635]/90 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,245,255,0.25)]`.
+  - `selected`: `border-[#00f5ff] bg-cyan-950 animate-pulse-border text-cyan-300`;
+  - `sorted`: `border-emerald-500/30 bg-emerald-950 box-glow-idle text-emerald-400`;
+  - `default`: `border-[rgba(42,74,158,0.8)] bg-[#0f1e4a] box-glow-idle text-white hover:bg-[#162460]`.
+- **Acessibilidade (P1.5):**
+  - Botão nativo `<button>` com anel de foco de alto contraste: `focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060b1a]`;
+  - Atributo descritivo dinâmico `aria-label`: `Caixa #{index + 1}, valor {value}, [selecionada no par ativo / consolidada]`, permitindo operação precisa via leitores de tela;
+  - Dupla codificação: badges de texto (`PAR`, `OK`, `PKG`) e ícones operam conjuntamente com as cores de borda para evitar dependência exclusiva de cor.
 
 ### 4.2. `GameButton` ([`src/components/GameButton.tsx`](../../src/components/GameButton.tsx))
 Botão com estética sci-fi e suporte a quatro variantes temáticas.
@@ -145,6 +213,9 @@ interface GameButtonProps {
   - `"secondary"`: Fundo roxo translúcido com borda roxa `#8b5cf6`, texto `#c4b5fd`;
   - `"danger"`: Fundo vermelho translúcido `#ef4444`, texto `#fca5a5`;
   - `"ghost"`: Fundo transparente com borda translúcida ciano/branca.
+- **Acessibilidade (P1.5):**
+  - Anel de foco acessível: `focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060b1a]`;
+  - Estados `disabled` utilizam atributos HTML padrão com `disabled:opacity-40 disabled:cursor-not-allowed` e inibição de eventos de clique.
 
 ### 4.3. `InstructionPanel` ([`src/components/InstructionPanel.tsx`](../../src/components/InstructionPanel.tsx))
 Faixa horizontal de comunicação contextual com o usuário.
@@ -161,6 +232,8 @@ interface InstructionPanelProps {
   - `"warning"`: Ícone `⚠`, borda âmbar/40, texto `#fde68a`;
   - `"success"`: Ícone `✓`, borda esmeralda/40, texto `#a7f3d0`;
   - `"error"`: Ícone `✕`, borda vermelha/40, texto `#fecaca`.
+- **Acessibilidade (P1.5):**
+  - Equipado com `role="status"` e `aria-live="polite"` para anúncio não-intrusivo de mensagens de estado e validação por tecnologias assistivas.
 
 ### 4.4. `PhaseHeader` ([`src/components/PhaseHeader.tsx`](../../src/components/PhaseHeader.tsx))
 Barra superior fixa contendo metadados operacionais da rodada.
@@ -185,6 +258,24 @@ interface StatsPanelProps {
 }
 ```
 
+### 4.6. `BubbleSortPseudocodePanel` ([`src/components/BubbleSortPseudocodePanel.tsx`](../../src/components/BubbleSortPseudocodePanel.tsx))
+Painel de pseudocódigo canônico de Bubble Sort com sincronização pura e contextualização separada de valores concretos (P1.4, ADR 0005).
+
+```typescript
+interface BubbleSortPseudocodePanelProps {
+  frame: ReplayFrame; // Quadro de replay corrente (fonte única e pura de verdade)
+  className?: string; // Classes utilitárias opcionais de estilização
+}
+```
+
+- **Funcionalidades:**
+  - Renderiza a representação canônica imutável de 9 instruções do Bubble Sort (`BUBBLE_SORT_PSEUDOCODE`);
+  - Destaque primário e secundário de instruções ativas via `getPseudocodeHighlight(frame)`:
+    - `INITIAL`: Destaque neutro no cabeçalho `procedimento bubbleSort(A)`;
+    - `KEEP`: Destaque na condição `se A[j] > A[j + 1] então` com badge `[FALSO]` e indicação de manutenção de ordem;
+    - `SWAP`: Destaque na instrução `trocar A[j] e A[j + 1]` com badge `[⇄ EXECUTADO]` e indicação de condição `[VERDADEIRO]`;
+  - Painel contextual inferior exibindo os valores concretos avaliados no frame ($A[j] = X, A[j+1] = Y$, $X > Y \rightarrow \text{VERDADEIRO/FALSO}$) preservando a formulação genérica do código.
+
 ---
 
 ## 5. Matriz de Componentes e Telas
@@ -195,12 +286,15 @@ interface StatsPanelProps {
 | **`HomeScreen`** | [`src/screens/HomeScreen.tsx`](../../src/screens/HomeScreen.tsx) | Tela de apresentação temática e ponto de partida | `onStart`, `onHowToPlay` | [`src/App.tsx`](../../src/App.tsx) |
 | **`TutorialScreen`** | [`src/screens/TutorialScreen.tsx`](../../src/screens/TutorialScreen.tsx) | Demonstração animada e regras do Bubble Sort | `onBack`, `onUnderstood` | [`src/App.tsx`](../../src/App.tsx) |
 | **`GameScreen`** | [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx) | Gameplay interativo, seleção e lógica de ordenação | `initialArray`, `phase`, `onComplete` | [`src/App.tsx`](../../src/App.tsx) |
-| **`ResultScreen`** | [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx) | Exibe pontuação, eficiência e pseudocódigo | `result`, `phase`, `totalPhases`, `onRepeat`, `onNext` | [`src/App.tsx`](../../src/App.tsx) |
-| **`NumberedBox`** | [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx) | Caixa de carga numerada com estados visuais e animações | `value`, `index`, `selected`, `sorted`, `animating`, `onClick` | `GameScreen`, `TutorialScreen`, `ResultScreen` |
-| **`GameButton`** | [`src/components/GameButton.tsx`](../../src/components/GameButton.tsx) | Botão sci-fi estilizado com 4 variantes visuais | `children`, `variant`, `size`, `disabled`, `onClick` | Todas as telas (`Home`, `Tutorial`, `Game`, `Result`) |
+| **`ResultScreen`** | [`src/screens/ResultScreen.tsx`](../../src/screens/ResultScreen.tsx) | Exibe métricas factuais (comparações, trocas, erros, dicas) e pseudocódigo | `finalArray`, `comparisons`, `swaps`, `errors`, `hintsUsed`, `phase`, `hasNextPhase`, `onRepeat`, `onNext`, `onViewReplay` | [`src/App.tsx`](../../src/App.tsx) |
+| **`ReplayScreen`** | [`src/screens/ReplayScreen.tsx`](../../src/screens/ReplayScreen.tsx) | Reprodução visual e temporal passo a passo dos registros do histórico | `initialArray`, `history`, `phase`, `onBackToResult` | [`src/App.tsx`](../../src/App.tsx) |
+| **`CampaignCompleteScreen`** | [`src/screens/CampaignCompleteScreen.tsx`](../../src/screens/CampaignCompleteScreen.tsx) | Encerramento da campanha e resumo factual global | `results`, `totalPhases`, `onReturnHome`, `onRestartProtocol` | [`src/App.tsx`](../../src/App.tsx) |
+| **`NumberedBox`** | [`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx) | Caixa de carga numerada com estados visuais e animações | `value`, `index`, `selected`, `sorted`, `animating`, `onClick` | `GameScreen`, `TutorialScreen`, `ResultScreen`, `ReplayScreen` |
+| **`GameButton`** | [`src/components/GameButton.tsx`](../../src/components/GameButton.tsx) | Botão sci-fi estilizado com 4 variantes visuais | `children`, `variant`, `size`, `disabled`, `onClick` | Todas as telas (`Home`, `Tutorial`, `Game`, `Result`, `CampaignComplete`) |
 | **`InstructionPanel`**| [`src/components/InstructionPanel.tsx`](../../src/components/InstructionPanel.tsx) | Painel informativo com tipologia e ícones | `message`, `type` | `GameScreen`, `TutorialScreen` |
 | **`PhaseHeader`** | [`src/components/PhaseHeader.tsx`](../../src/components/PhaseHeader.tsx) | Barra de topo com protocolo, fase e status | `protocol`, `phase`, `totalPhases` | `GameScreen`, `ResultScreen` |
 | **`StatsPanel`** | [`src/components/StatsPanel.tsx`](../../src/components/StatsPanel.tsx) | Painel numérico de comparações e trocas | `comparisons`, `swaps` | `GameScreen` |
+| **`BubbleSortPseudocodePanel`** | [`src/components/BubbleSortPseudocodePanel.tsx`](../../src/components/BubbleSortPseudocodePanel.tsx) | Painel de pseudocódigo sincronizado com destaque de linha e contexto concreto | `frame`, `className` | `ReplayScreen` |
 
 ---
 
