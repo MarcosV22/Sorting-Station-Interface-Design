@@ -705,4 +705,132 @@ describe("Bubble Sort Engine — Suíte Pedagógica P0.2", () => {
       expect(calculateBubbleSortProgress(state)).toBe(100)
     })
   })
+
+  describe("Grupo 16: Modo Desafio / Variante EARLY_EXIT e Preservação do CANONICAL", () => {
+    it("deve preservar o comportamento CANONICAL por padrão e em chamadas existentes", () => {
+      // createBubbleSortState(values) deve continuar sendo CANONICAL
+      const state = createBubbleSortState([1, 2, 3, 4])
+      expect(state.variant).toBe("CANONICAL")
+      expect(state.earlyExitTriggered).toBe(false)
+      expect(state.terminationPass).toBeUndefined()
+
+      // Mesmo já ordenado, CANONICAL executa todas as 6 comparações formais
+      let current = state
+      while (!current.completed) {
+        current = executeBubbleSortStep(current)
+      }
+      expect(current.comparisons).toBe(6)
+      expect(current.swaps).toBe(0)
+      expect(current.earlyExitTriggered).toBe(false)
+      expect(current.passIndex).toBe(2)
+    })
+
+    it("Cenário 1 (Já ordenado [12, 25, 47, 63, 88]): encerra após exatamente 4 comparações (1 passada)", () => {
+      let state = createBubbleSortState([12, 25, 47, 63, 88], { variant: "EARLY_EXIT" })
+      expect(state.variant).toBe("EARLY_EXIT")
+      expect(state.earlyExitTriggered).toBe(false)
+
+      while (!state.completed) {
+        state = executeBubbleSortStep(state)
+      }
+
+      // Executa exatamente 4 comparações da Passada 1 (vs 10 canônicas)
+      expect(state.comparisons).toBe(4)
+      expect(state.swaps).toBe(0)
+      expect(state.completed).toBe(true)
+      expect(state.status).toBe("COMPLETED")
+      expect(state.earlyExitTriggered).toBe(true)
+      expect(state.terminationPass).toBe(1)
+      expect(state.sortedBoundary).toBe(0)
+      expect(getSortedIndices(state)).toEqual([0, 1, 2, 3, 4])
+      expect(calculateBubbleSortProgress(state)).toBe(100)
+      expect(state.history).toHaveLength(4)
+      // Cada registro em history é uma comparação real
+      expect(state.history.every(h => h.swapped === false)).toBe(true)
+    })
+
+    it("Cenário 2 (Quase ordenado [15, 8, 23, 42, 60]): encerra após exatamente 7 comparações (2 passadas)", () => {
+      let state = createBubbleSortState([15, 8, 23, 42, 60], { variant: "EARLY_EXIT" })
+
+      while (!state.completed) {
+        state = executeBubbleSortStep(state)
+      }
+
+      // Passada 1: 4 comparações, 1 swap ([15, 8] trocam)
+      // Passada 2: 3 comparações, 0 swaps -> Early Exit disparado! Total = 7 comparações (vs 10 canônicas)
+      expect(state.comparisons).toBe(7)
+      expect(state.swaps).toBe(1)
+      expect(state.completed).toBe(true)
+      expect(state.earlyExitTriggered).toBe(true)
+      expect(state.terminationPass).toBe(2)
+      expect(state.sortedBoundary).toBe(0)
+      expect(getSortedIndices(state)).toEqual([0, 1, 2, 3, 4])
+      expect(state.currentValues).toEqual([8, 15, 23, 42, 60])
+      expect(calculateBubbleSortProgress(state)).toBe(100)
+    })
+
+    it("Cenário 3 (Pior caso [30, 45, 60, 75, 10]): executa todas as 10 comparações sem acionar Early Exit", () => {
+      let state = createBubbleSortState([30, 45, 60, 75, 10], { variant: "EARLY_EXIT" })
+
+      while (!state.completed) {
+        state = executeBubbleSortStep(state)
+      }
+
+      // O elemento 10 é uma 'tartaruga' que se move apenas 1 posição à esquerda por passada.
+      // Há trocas em todas as passadas, portanto não há economia de comparações.
+      expect(state.comparisons).toBe(10)
+      expect(state.swaps).toBe(4)
+      expect(state.completed).toBe(true)
+      expect(state.earlyExitTriggered).toBe(false)
+      expect(state.currentValues).toEqual([10, 30, 45, 60, 75])
+    })
+
+    it("deve funcionar corretamente com elementos duplicados", () => {
+      // [4, 2, 2, 5] -> Passada 1: 3 comparações, 1 swap -> [2, 2, 4, 5]
+      // Passada 2: 2 comparações (2==2 KEEP, 2<=4 KEEP), 0 swaps -> Early Exit! Total = 5 comparações
+      let state = createBubbleSortState([4, 2, 2, 5], { variant: "EARLY_EXIT" })
+      while (!state.completed) {
+        state = executeBubbleSortStep(state)
+      }
+      expect(state.completed).toBe(true)
+      expect(state.earlyExitTriggered).toBe(true)
+      expect(state.currentValues).toEqual([2, 2, 4, 5])
+      expect(state.sortedBoundary).toBe(0)
+    })
+
+    it("deve funcionar corretamente com números negativos", () => {
+      // [-5, -2, 0, 4] -> já ordenado -> 3 comparações -> Early Exit!
+      let state = createBubbleSortState([-5, -2, 0, 4], { variant: "EARLY_EXIT" })
+      while (!state.completed) {
+        state = executeBubbleSortStep(state)
+      }
+      expect(state.comparisons).toBe(3)
+      expect(state.earlyExitTriggered).toBe(true)
+      expect(state.terminationPass).toBe(1)
+    })
+
+    it("deve manter o determinismo e imutabilidade dos estados na variante EARLY_EXIT", () => {
+      const state1 = createBubbleSortState([15, 8, 23, 42, 60], { variant: "EARLY_EXIT" })
+      const state2 = executeBubbleSortStep(state1)
+
+      expect(Object.isFrozen(state1)).toBe(true)
+      expect(Object.isFrozen(state2)).toBe(true)
+      expect(state1.currentValues).toEqual([15, 8, 23, 42, 60])
+      expect(state2.currentValues).toEqual([8, 15, 23, 42, 60])
+      expect(state1.variant).toBe("EARLY_EXIT")
+      expect(state2.variant).toBe("EARLY_EXIT")
+    })
+
+    it("executeUserStep deve respeitar e propagar a variante EARLY_EXIT", () => {
+      let state = createBubbleSortState([10, 20], { variant: "EARLY_EXIT" })
+      const stepResult = executeUserStep(state, "KEEP")
+
+      expect(stepResult.valid).toBe(true)
+      expect(stepResult.state.completed).toBe(true)
+      expect(stepResult.state.earlyExitTriggered).toBe(true)
+      expect(stepResult.state.variant).toBe("EARLY_EXIT")
+      expect(stepResult.state.comparisons).toBe(1)
+      expect(stepResult.state.swaps).toBe(0)
+    })
+  })
 })

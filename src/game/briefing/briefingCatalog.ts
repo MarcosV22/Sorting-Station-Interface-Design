@@ -1,0 +1,148 @@
+import type { ProtocolModeBriefing, BriefingModeId } from "./types";
+
+/**
+ * Briefing oficial para a campanha didática do Bubble Sort (Treinamento Regular).
+ * Foco na invariante de laço, pares vizinhos, trocas estritas e passadas completas.
+ */
+export const BUBBLE_CANONICAL_BRIEFING: ProtocolModeBriefing = {
+  id: "bubble-canonical",
+  protocolName: "PROTOCOLO: BUBBLE SORT",
+  modeName: "TREINAMENTO REGULAR",
+  badgeText: "CENTRAL LOGÍSTICA • PROTOCOLO CANÔNICO",
+  badgeVariant: "cyan",
+  subtitle: "Varredura sequencial comparando pares de cargas vizinhas na esteira da estação.",
+  objective:
+    "Organizar os lotes de cargas em ordem crescente executando todas as comparações canônicas de cada passada até a estabilização completa do vetor.",
+  instructions: [
+    {
+      icon: "⇄",
+      title: "Pares Vizinhos",
+      description:
+        "O operador inspeciona exclusivamente duas cargas contíguas por vez, avançando da esquerda para a direita na esteira.",
+    },
+    {
+      icon: "🔀",
+      title: "Trocar (Esquerda > Direita)",
+      description:
+        "Se a carga da esquerda tiver valor maior que a da direita, execute a permuta física entre as caixas.",
+    },
+    {
+      icon: "⏸",
+      title: "Manter (Esquerda ≤ Direita)",
+      description:
+        "Se a carga da esquerda já for menor ou igual à da direita, confirme a preservação das posições sem permutar.",
+    },
+    {
+      icon: "✓",
+      title: "Passadas e Consolidação",
+      description:
+        "Ao final de cada passada completa pela esteira, a maior carga restante estabiliza em sua posição definitiva com selo OK.",
+    },
+  ],
+  highlights: [
+    {
+      label: "MÉTODO",
+      value: "Canônico Didático",
+      variant: "cyan",
+    },
+    {
+      label: "COMPARAÇÕES",
+      value: "n(n-1)/2 Formais",
+      variant: "purple",
+    },
+    {
+      label: "PROGRESSÃO",
+      value: "3 Fases (4, 5 e 6 Cargas)",
+      variant: "emerald",
+    },
+  ],
+  particularities: [
+    "A campanha regular executa todas as comparações teóricas do algoritmo para assegurar a fixação da invariante de laço.",
+    "Cada novo turno iniciado gera um novo lote de cargas via gerador procedural determinístico.",
+  ],
+  startLabel: "INICIAR TREINAMENTO",
+  startVariant: "primary",
+};
+
+/**
+ * Briefing oficial para a variante Bubble Sort Early Exit (Modo Desafio).
+ * Foco na otimização analítica: detecção de passada sem trocas e término antecipado.
+ */
+export const BUBBLE_EARLY_EXIT_BRIEFING: ProtocolModeBriefing = {
+  id: "bubble-early-exit",
+  protocolName: "PROTOCOLO: BUBBLE SORT",
+  modeName: "MODO DESAFIO (EARLY EXIT)",
+  badgeText: "CENTRAL LOGÍSTICA • VARIANTE OTIMIZADA",
+  badgeVariant: "amber",
+  subtitle: "Monitoramento analítico de permutas e término antecipado em passadas estáveis.",
+  objective:
+    "Ordenar o lote de cargas monitorando a ocorrência de trocas: se uma passada inteira for concluída sem nenhuma permuta, a esteira encerra antecipadamente.",
+  instructions: [
+    {
+      icon: "⚡",
+      title: "Variante Otimizada",
+      description:
+        "Continua operando com comparações entre vizinhos contíguos, monitorando se alguma troca foi necessária na passada.",
+    },
+    {
+      icon: "⏹",
+      title: "Parada Antecipada",
+      description:
+        "Se uma passada inteira for completada sem nenhuma troca, o protocolo detecta que o vetor já está ordenado e encerra o turno.",
+    },
+    {
+      icon: "⚖",
+      title: "Sensibilidade à Entrada",
+      description:
+        "Vetores quase ordenados economizam comparações (melhor caso Ω(n)), enquanto inversões na cauda executam todas as passadas normais.",
+    },
+    {
+      icon: "★",
+      title: "Critério de Pontuação",
+      description:
+        "As comparações evitadas servem para análise de complexidade computacional e não alteram a fórmula de pontuação do protocolo.",
+    },
+  ],
+  highlights: [
+    {
+      label: "MÉTODO",
+      value: "Early Exit Otimizado",
+      variant: "amber",
+    },
+    {
+      label: "MELHOR CASO",
+      value: "Ω(n) Comparações",
+      variant: "emerald",
+    },
+    {
+      label: "CENÁRIOS",
+      value: "3 Desafios Curados",
+      variant: "purple",
+    },
+  ],
+  particularities: [
+    "Apenas encerra antecipadamente se a passada terminar com exatamente zero trocas.",
+    "Comparações evitadas geram métricas de confronto factual contra o algoritmo canônico na tela de resultados.",
+  ],
+  startLabel: "INICIAR DESAFIO",
+  startVariant: "primary",
+};
+
+export const BRIEFING_CATALOG: Record<BriefingModeId, ProtocolModeBriefing> = {
+  "bubble-canonical": BUBBLE_CANONICAL_BRIEFING,
+  "bubble-early-exit": BUBBLE_EARLY_EXIT_BRIEFING,
+};
+
+/**
+ * Recupera o briefing configurado para um modo específico.
+ */
+export function getBriefingForMode(modeId: BriefingModeId): ProtocolModeBriefing {
+  return BRIEFING_CATALOG[modeId] ?? BUBBLE_CANONICAL_BRIEFING;
+}
+
+/**
+ * Mapeia o GameMode do App ("CAMPAIGN" | "CHALLENGE") para seu briefing correspondente.
+ */
+export function getBriefingForGameMode(mode: "CAMPAIGN" | "CHALLENGE"): ProtocolModeBriefing {
+  return mode === "CHALLENGE" ? BUBBLE_EARLY_EXIT_BRIEFING : BUBBLE_CANONICAL_BRIEFING;
+}

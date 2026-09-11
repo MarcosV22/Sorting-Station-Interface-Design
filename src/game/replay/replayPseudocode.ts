@@ -1,6 +1,7 @@
 import type { ReplayFrame } from "./replayModel";
+import type { BubbleSortVariant } from "../sorting/types";
 
-export type PseudocodeLineId =
+export type CanonicalPseudocodeLineId =
   | "PROCEDURE"
   | "OUTER_LOOP"
   | "INNER_LOOP"
@@ -11,12 +12,126 @@ export type PseudocodeLineId =
   | "END_OUTER"
   | "END_PROCEDURE";
 
+export type EarlyExitPseudocodeLineId =
+  | "PROCEDURE"
+  | "OUTER_LOOP"
+  | "RESET_SWAPPED"
+  | "INNER_LOOP"
+  | "IF_CONDITION"
+  | "SWAP_STATEMENT"
+  | "SET_SWAPPED"
+  | "END_IF"
+  | "END_INNER"
+  | "CHECK_EARLY_EXIT"
+  | "BREAK_STATEMENT"
+  | "END_IF_EXIT"
+  | "END_OUTER"
+  | "END_PROCEDURE";
+
+export type PseudocodeLineId =
+  | CanonicalPseudocodeLineId
+  | "RESET_SWAPPED"
+  | "SET_SWAPPED"
+  | "CHECK_EARLY_EXIT"
+  | "BREAK_STATEMENT"
+  | "END_IF_EXIT";
+
 export interface PseudocodeLine {
   readonly id: PseudocodeLineId;
   readonly lineNumber: number;
   readonly indent: number;
   readonly text: string;
 }
+
+/**
+ * Representação canônica e imutável do pseudocódigo do Bubble Sort Otimizado (Early Exit).
+ */
+export const BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE: readonly PseudocodeLine[] = Object.freeze([
+  Object.freeze({
+    id: "PROCEDURE",
+    lineNumber: 1,
+    indent: 0,
+    text: "procedimento bubbleSortOtimizado(A)",
+  }),
+  Object.freeze({
+    id: "OUTER_LOOP",
+    lineNumber: 2,
+    indent: 1,
+    text: "para i de 0 até n - 2 faça",
+  }),
+  Object.freeze({
+    id: "RESET_SWAPPED",
+    lineNumber: 3,
+    indent: 2,
+    text: "trocou ← falso",
+  }),
+  Object.freeze({
+    id: "INNER_LOOP",
+    lineNumber: 4,
+    indent: 2,
+    text: "para j de 0 até n - 2 - i faça",
+  }),
+  Object.freeze({
+    id: "IF_CONDITION",
+    lineNumber: 5,
+    indent: 3,
+    text: "se A[j] > A[j + 1] então",
+  }),
+  Object.freeze({
+    id: "SWAP_STATEMENT",
+    lineNumber: 6,
+    indent: 4,
+    text: "trocar A[j] e A[j + 1]",
+  }),
+  Object.freeze({
+    id: "SET_SWAPPED",
+    lineNumber: 7,
+    indent: 4,
+    text: "trocou ← verdadeiro",
+  }),
+  Object.freeze({
+    id: "END_IF",
+    lineNumber: 8,
+    indent: 3,
+    text: "fim se",
+  }),
+  Object.freeze({
+    id: "END_INNER",
+    lineNumber: 9,
+    indent: 2,
+    text: "fim para",
+  }),
+  Object.freeze({
+    id: "CHECK_EARLY_EXIT",
+    lineNumber: 10,
+    indent: 2,
+    text: "se não trocou então",
+  }),
+  Object.freeze({
+    id: "BREAK_STATEMENT",
+    lineNumber: 11,
+    indent: 3,
+    text: "interromper",
+  }),
+  Object.freeze({
+    id: "END_IF_EXIT",
+    lineNumber: 12,
+    indent: 2,
+    text: "fim se",
+  }),
+  Object.freeze({
+    id: "END_OUTER",
+    lineNumber: 13,
+    indent: 1,
+    text: "fim para",
+  }),
+  Object.freeze({
+    id: "END_PROCEDURE",
+    lineNumber: 14,
+    indent: 0,
+    text: "fim procedimento",
+  }),
+]);
 
 /**
  * Representação canônica e imutável do pseudocódigo do Bubble Sort
@@ -111,8 +226,12 @@ export interface PseudocodeHighlight {
  * correspondente no pseudocódigo, sem reexecutar o algoritmo de ordenação.
  */
 export function getPseudocodeHighlight(
-  frame: ReplayFrame
+  frame: ReplayFrame,
+  variantOverride?: BubbleSortVariant
 ): PseudocodeHighlight {
+  const variant = variantOverride ?? frame.variant ?? "CANONICAL";
+  const isEarlyExitVariant = variant === "EARLY_EXIT";
+
   if (frame.action === "INITIAL") {
     const concreteContext: PseudocodeConcreteContext = Object.freeze({
       i: null,
@@ -123,12 +242,14 @@ export function getPseudocodeHighlight(
       rightValue: null,
       comparisonText: null,
       conditionStatusText: "Nenhuma comparação realizada ainda.",
-      actionTakenText: "Carga inicial na esteira. Aguardando primeira iteração.",
+      actionTakenText: isEarlyExitVariant
+        ? "Carga inicial na esteira. Flag 'trocou' inicializada para a 1ª passada."
+        : "Carga inicial na esteira. Aguardando primeira iteração.",
     });
 
-    const activeLineIds: readonly PseudocodeLineId[] = Object.freeze([
-      "PROCEDURE",
-    ]);
+    const activeLineIds: readonly PseudocodeLineId[] = Object.freeze(
+      isEarlyExitVariant ? ["PROCEDURE", "RESET_SWAPPED"] : ["PROCEDURE"]
+    );
 
     return Object.freeze({
       primaryLineId: "PROCEDURE",
@@ -151,6 +272,36 @@ export function getPseudocodeHighlight(
     leftValue !== null && rightValue !== null
       ? `${leftValue} > ${rightValue}`
       : null;
+
+  // Caso especial: Early Exit disparado no encerramento deste frame
+  if (isEarlyExitVariant && frame.earlyExitTriggered) {
+    const concreteContext: PseudocodeConcreteContext = Object.freeze({
+      i,
+      j,
+      leftIndex,
+      rightIndex,
+      leftValue,
+      rightValue,
+      comparisonText,
+      conditionStatusText: "não trocou = VERDADEIRO (0 permutas nesta passada)",
+      actionTakenText:
+        "Condição 'se não trocou' satisfeita: esteira já estabilizada. Interrompendo execução antecipadamente.",
+    });
+
+    const activeLineIds: readonly PseudocodeLineId[] = Object.freeze([
+      "CHECK_EARLY_EXIT",
+      "BREAK_STATEMENT",
+    ]);
+
+    return Object.freeze({
+      primaryLineId: "BREAK_STATEMENT",
+      activeLineIds,
+      conditionLineId: "CHECK_EARLY_EXIT",
+      conditionResult: "TRUE",
+      swapExecuted: false,
+      concreteContext,
+    });
+  }
 
   if (frame.action === "KEEP") {
     const concreteContext: PseudocodeConcreteContext = Object.freeze({
@@ -195,10 +346,11 @@ export function getPseudocodeHighlight(
         : "trocar A[j] e A[j + 1]",
   });
 
-  const activeLineIds: readonly PseudocodeLineId[] = Object.freeze([
-    "IF_CONDITION",
-    "SWAP_STATEMENT",
-  ]);
+  const activeLineIds: readonly PseudocodeLineId[] = Object.freeze(
+    isEarlyExitVariant
+      ? ["IF_CONDITION", "SWAP_STATEMENT", "SET_SWAPPED"]
+      : ["IF_CONDITION", "SWAP_STATEMENT"]
+  );
 
   return Object.freeze({
     primaryLineId: "SWAP_STATEMENT",

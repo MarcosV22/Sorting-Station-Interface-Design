@@ -3,12 +3,14 @@ import NumberedBox from "../components/NumberedBox";
 import GameButton from "../components/GameButton";
 import BubbleSortPseudocodePanel from "../components/BubbleSortPseudocodePanel";
 import { buildReplayFrames, getReplayFrame } from "../game/replay";
-import type { StepRecord } from "../game/sorting/types";
+import type { BubbleSortVariant, StepRecord } from "../game/sorting/types";
 
 interface ReplayScreenProps {
-  initialArray: number[];
+  initialArray: readonly number[];
   history: readonly StepRecord[];
   phase: number;
+  variant?: BubbleSortVariant;
+  earlyExitTriggered?: boolean;
   onBackToResult: () => void;
 }
 
@@ -16,12 +18,14 @@ export default function ReplayScreen({
   initialArray,
   history,
   phase,
+  variant = "CANONICAL",
+  earlyExitTriggered = false,
   onBackToResult,
 }: ReplayScreenProps) {
   // Derivação pura e determinística de todos os quadros a partir do histórico real
   const frames = useMemo(
-    () => buildReplayFrames(initialArray, history),
-    [initialArray, history]
+    () => buildReplayFrames(initialArray, history, { variant, earlyExitTriggered }),
+    [initialArray, history, variant, earlyExitTriggered]
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -100,13 +104,17 @@ export default function ReplayScreen({
               className="text-[10px] text-cyan-400 tracking-widest uppercase"
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
-              AUDITORIA TÉCNICA // MODO REPLAY
+              {variant === "EARLY_EXIT"
+                ? "AUDITORIA TÉCNICA // MODO DESAFIO (EARLY EXIT)"
+                : "AUDITORIA TÉCNICA // MODO REPLAY"}
             </span>
             <span
               className="text-lg font-black text-white tracking-tight"
               style={{ fontFamily: "'Orbitron', sans-serif" }}
             >
-              FASE {phase} — PROTOCOLO BUBBLE
+              {variant === "EARLY_EXIT"
+                ? `CENÁRIO ${phase} — VARIANTE EARLY EXIT`
+                : `FASE ${phase} — PROTOCOLO BUBBLE`}
             </span>
           </div>
         </div>
@@ -120,7 +128,7 @@ export default function ReplayScreen({
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-5 max-w-4xl w-full mx-auto my-auto">
         {/* Step & Action Badge Header */}
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <span
               className="text-sm font-bold text-white/50 tracking-wider px-3 py-1 rounded border border-white/10 bg-white/5"
               style={{ fontFamily: "'Space Mono', monospace" }}
@@ -150,6 +158,14 @@ export default function ReplayScreen({
                 style={{ fontFamily: "'Space Mono', monospace" }}
               >
                 = ORDEM MANTIDA (KEEP)
+              </span>
+            )}
+            {currentFrame.earlyExitTriggered && (
+              <span
+                className="text-xs font-bold text-amber-300 tracking-wider px-3 py-1 rounded border border-amber-500/40 bg-amber-950/60 animate-pulse"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                ⚡ TÉRMINO ANTECIPADO (0 TROCAS)
               </span>
             )}
           </div>
@@ -222,8 +238,12 @@ export default function ReplayScreen({
           </div>
         </div>
 
-        {/* Synchronized Pseudocode Panel (P1.4) */}
-        <BubbleSortPseudocodePanel frame={currentFrame} className="w-full" />
+        {/* Synchronized Pseudocode Panel (P1.4 / P1.8) */}
+        <BubbleSortPseudocodePanel
+          frame={currentFrame}
+          variant={variant}
+          className="w-full"
+        />
 
         {/* Replay Timeline Progress Bar */}
         <div className="w-full max-w-xl flex flex-col gap-1.5">

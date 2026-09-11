@@ -118,6 +118,32 @@ O modelo oficial de deliberação está versionado em [`docs/adr/TEMPLATE.md`](.
 - **Contexto:** Resolve a representação textual sincronizada de P1.4. Define a representação canônica imutável `BUBBLE_SORT_PSEUDOCODE` (9 instruções), a função de mapeamento puro `getPseudocodeHighlight(frame)` em `src/game/replay/replayPseudocode.ts` e o componente reutilizável `BubbleSortPseudocodePanel`. Separa rigorosamente a instrução abstrata genérica ($A[j] > A[j+1]$) da contextualização com valores concretos ($5 > 2 \rightarrow \text{VERDADEIRO}$).
 - **Impacto:** Conclusão de P1.4 com 63 testes automatizados passando, ausência de reexecução e sincronização perfeita em todos os controles de replay.
 
+### [ADR 0006: Camada Desacoplada de Persistência Local via localStorage](../../docs/adr/0006-decoupled-local-storage-persistence.md)
+- **Status:** `Aceito` (2026-09-11)
+- **Contexto:** Resolve formalmente o Candidato 3 e o marco P1.6. Introduz o módulo puro e desacoplado `src/game/persistence/` com abstração `StorageAdapter`, schema canônico versionado (`schemaVersion: 1`, chave `sorting_station_v1_save`), validador defensivo sem dependências e fallback gracioso em memória. Garante a restauração transparente do progresso e do tutorial após recarregar com F5, sem acoplar componentes visuais e sem inventar métricas arbitrárias de score.
+- **Impacto:** Conclusão de P1.6 com 86 testes automatizados passando 100% verde (23 testes dedicados à persistência e resiliência).
+
+### [ADR 0007: Pontuação do Protocolo e Tempo Descritivo de Operação](../../docs/adr/0007-protocol-score-and-descriptive-elapsed-time.md)
+- **Status:** `Aceito` (2026-09-11)
+- **Contexto:** Resolve formalmente o marco P1.7. Corrige a premissa obsoleta do roadmap após comprovação factual em P1.7-A de que comparações e trocas são invariantes do algoritmo Bubble Sort. Implementa a função pura `calculateProtocolScore` com a fórmula canônica `score = max(0, 100 - errors * 10 - hintsUsed * 5)`, a medição de tempo monotônica descritiva com peso zero no score (`elapsedTimeMs`), o formatador neutro `formatElapsedTime`, e a evolução do storage para Schema v2 (`schemaVersion: 2`) com migração transparente retrocompatível de saves v1 e regra estrita de recordes (substituição por maior pontuação ou menor número de erros em caso de empate; tempo estritamente excluído do desempate para evitar ansiedade e pressa).
+- **Impacto:** Conclusão de P1.7 com 106 testes automatizados passando 100% verde (11 testes dedicados de pontuação/tempo e 9 testes dedicados de migração v1->v2 e recordes).
+
+### [ADR 0008: Variante Otimizada Bubble Sort Early Exit e Modo Desafio](../../docs/adr/0008-bubble-sort-early-exit-variant.md)
+- **Status:** `Aceito` (2026-09-11)
+- **Contexto:** Resolve formalmente o marco P1.8. Adiciona a variante opcional `EARLY_EXIT` unificada no mesmo motor da Sorting Engine (`src/game/sorting/bubbleSortEngine.ts`), preservando a variante didática `CANONICAL` intacta com todas as suas comparações teóricas. Estabelece a condição determinística de parada ao término de passada sem trocas (`swapsInCurrentPass === 0`), 3 cenários canônicos de teste, sincronização com pseudocódigo estendido de 14 instruções no replay (`BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE`), desbloqueio puramente derivado da conclusão da campanha regular, persistência de resultados em memória sem mutação no Schema v2 e exibição de métricas comparativas na tela de resultado sem pontuação extra para comparações evitadas.
+- **Impacto:** Conclusão de P1.8 com 122 testes automatizados passando 100% verde (16 testes dedicados à variante e cenários, metadados de replay e pseudocódigo).
+
+### [ADR 0009: Infraestrutura Global de Geração Procedural de Vetores](../../docs/adr/0009-global-procedural-array-generation.md)
+- **Status:** `Aceito` (2026-09-11)
+- **Contexto:** Resolve formalmente o marco P1.9. Cria a camada transversal e universal `src/game/generation/` (`types.ts`, `prng.ts`, `constraints.ts`, `arrayGenerator.ts`, `index.ts`), 100% desacoplada e agnóstica a qualquer engine de ordenação (zero imports de `sorting/`). Implementa PRNG determinístico Mulberry32 de 32 bits com dispersão FNV-1a para sementes numéricas e textuais, amostragem Fisher-Yates sem colisões para arrays sem duplicados (suportando também `allowDuplicates: true`), preset desacoplado `BUBBLE_CAMPAIGN_CONSTRAINTS` (não-ordenado, não-reverso, com ao menos um SWAP e um KEEP), estratégia de fallback estruturado determinístico sem loops infinitos e falha explícita via `ArrayGenerationError` se impossível. Conecta os vetores procedurais à campanha regular (F1: 4, F2: 5, F3: 6 elementos), preservando arrays curados no tutorial (`[3,1,2]`) e no Modo Desafio, mantendo o mesmo vetor ao reiniciar a fase (`handleRepeat`), gerando nova entrada ao avançar ou reiniciar a campanha, consumindo estritamente `initialArray` e `history` no replay sem regeneração via seed, e mantendo o Schema v2 do `localStorage` intacto.
+- **Impacto:** Conclusão de P1.9 com 157 testes automatizados passando 100% verde (31 testes dedicados de geração procedural, determinismo, imutabilidade, constraints e multi-algoritmo).
+
+### [ADR 0010: Tela Intermediária de Briefing Orientada a Dados e Desacoplada](../../docs/adr/0010-reusable-data-driven-mode-briefing.md)
+- **Status:** `Aceito` (2026-09-11)
+- **Contexto:** Resolve formalmente o marco P1.10. Cria a camada transversal de briefings `src/game/briefing/` (`types.ts`, `briefingCatalog.ts`, `index.ts`) e o componente genérico de interface `src/screens/ProtocolModeBriefingScreen.tsx`. Elimina a entrada abrupta e automática no gameplay após seleção do modo, apresentando ao operador um painel com objetivos, procedimentos operacionais, particularidades do modo, destaques de telemetria e CTA explícito. Posterga a geração procedural de vetores (P1.9) para o clique no CTA de início, garantindo que o botão [VOLTAR] retorne à tela anterior sem consumir sementes, sem gerar vetores e sem alterar métricas do Schema v2. A arquitetura orientada a dados é 100% agnóstica e reutilizável para futuros protocolos (Selection, Insertion, etc.).
+- **Impacto:** Conclusão de P1.10 com 169 testes automatizados passando 100% verde (12 testes dedicados ao briefing e integridade de fluxo).
+
+
 ---
 
 ## 5. Catálogo de Candidatos a ADR Futuro
@@ -127,11 +153,8 @@ As seguintes propostas de evolução estrutural permanecem documentadas como **c
 ---
 
 ### Candidato 3 — Estratégia de Persistência Local Desacoplada
-- **Contexto:** Todo o progresso de campanha e métricas de desempenho são perdidos ao atualizar a página (F5).
-- **Proposta sob Avaliação:** Implementar persistência local via `localStorage` com controle de versão de schema e fallback defensivo em memória ([`07-backend-and-persistence.md`](./07-backend-and-persistence.md)).
-- **Alternativas a Ponderar:** `localStorage` síncrono simples vs. `IndexedDB` assíncrono (ex.: Dexie.js) vs. persistência em cookies.
-- **Impacto:** Médio. Preserva autonomia do estudante sem custos de servidor.
-- **Status:** `CANDIDATO PROPOSTO (P1)`.
+- **Status:** `ACEITO COMO ADR 0006 (2026-09-11)` — Implementado em `src/game/persistence/`.
+- **Resolução:** Resolvido pela adoção de `StorageAdapter`, schema v1 com namespace e fallback defensivo em memória.
 
 ---
 

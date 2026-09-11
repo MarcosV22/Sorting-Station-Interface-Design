@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   BUBBLE_SORT_PSEUDOCODE,
+  BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE,
   getPseudocodeHighlight,
 } from "./replayPseudocode";
 import { buildReplayFrames } from "./replayModel";
@@ -280,5 +281,52 @@ describe("getPseudocodeHighlight (Camada Pura de Sincronização)", () => {
     expect(h6.conditionResult).toBe("TRUE");
     expect(h6.swapExecuted).toBe(true);
     expect(h6.concreteContext.comparisonText).toBe("2 > 1");
+  });
+
+  describe("Variante EARLY_EXIT — Pseudocódigo Otimizado", () => {
+    it("deve exportar a lista de 14 instruções da variante EARLY_EXIT", () => {
+      expect(BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE).toHaveLength(14);
+      expect(Object.isFrozen(BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE)).toBe(true);
+
+      const ids = BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE.map((l) => l.id);
+      expect(ids).toContain("RESET_SWAPPED");
+      expect(ids).toContain("SET_SWAPPED");
+      expect(ids).toContain("CHECK_EARLY_EXIT");
+      expect(ids).toContain("BREAK_STATEMENT");
+    });
+
+    it("destaca a interrupção (BREAK_STATEMENT) no último frame quando Early Exit ocorre", () => {
+      const mockEarlyExitFinalFrame: ReplayFrame = Object.freeze({
+        stepNumber: 4,
+        totalSteps: 4,
+        passNumber: 1,
+        totalPasses: 4,
+        comparisonNumber: 4,
+        totalComparisonsInPass: 4,
+        values: Object.freeze([12, 25, 47, 63, 88]),
+        activeIndices: Object.freeze([3, 4]) as readonly [number, number],
+        leftValue: 63,
+        rightValue: 88,
+        action: "KEEP",
+        actionLabel: "ORDEM MANTIDA",
+        explanation: "⚡ Término Antecipado",
+        sortedIndices: Object.freeze([0, 1, 2, 3, 4]),
+        variant: "EARLY_EXIT",
+        earlyExitTriggered: true,
+      });
+
+      const highlight = getPseudocodeHighlight(mockEarlyExitFinalFrame, "EARLY_EXIT");
+      expect(highlight.primaryLineId).toBe("BREAK_STATEMENT");
+      expect(highlight.activeLineIds).toContain("CHECK_EARLY_EXIT");
+      expect(highlight.activeLineIds).toContain("BREAK_STATEMENT");
+      expect(highlight.conditionResult).toBe("TRUE");
+    });
+
+    it("destaca SET_SWAPPED durante ações de SWAP na variante EARLY_EXIT", () => {
+      const highlight = getPseudocodeHighlight(mockSwapFrame, "EARLY_EXIT");
+      expect(highlight.primaryLineId).toBe("SWAP_STATEMENT");
+      expect(highlight.activeLineIds).toContain("SET_SWAPPED");
+      expect(highlight.swapExecuted).toBe(true);
+    });
   });
 });

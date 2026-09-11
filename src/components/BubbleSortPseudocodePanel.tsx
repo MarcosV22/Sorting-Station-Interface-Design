@@ -1,22 +1,35 @@
 import { useMemo } from "react";
 import type { ReplayFrame } from "../game/replay/replayModel";
+import type { BubbleSortVariant } from "../game/sorting/types";
 import {
   BUBBLE_SORT_PSEUDOCODE,
+  BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE,
   getPseudocodeHighlight,
 } from "../game/replay/replayPseudocode";
 
 export interface BubbleSortPseudocodePanelProps {
   frame: ReplayFrame;
+  variant?: BubbleSortVariant;
   className?: string;
 }
 
 export default function BubbleSortPseudocodePanel({
   frame,
+  variant: propVariant,
   className = "",
 }: BubbleSortPseudocodePanelProps) {
-  // Derivação pura e imutável do mapeamento de pseudocódigo a partir do frame
-  const highlight = useMemo(() => getPseudocodeHighlight(frame), [frame]);
+  const activeVariant = propVariant ?? frame.variant ?? "CANONICAL";
+  const isEarlyExit = activeVariant === "EARLY_EXIT";
+
+  // Derivação pura e imutável do mapeamento de pseudocódigo a partir do frame e da variante
+  const highlight = useMemo(
+    () => getPseudocodeHighlight(frame, activeVariant),
+    [frame, activeVariant]
+  );
   const ctx = highlight.concreteContext;
+  const pseudocodeLines = isEarlyExit
+    ? BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE
+    : BUBBLE_SORT_PSEUDOCODE;
 
   return (
     <div
@@ -31,7 +44,9 @@ export default function BubbleSortPseudocodePanel({
             className="text-[11px] font-bold text-cyan-300 tracking-wider uppercase"
             style={{ fontFamily: "'Orbitron', sans-serif" }}
           >
-            PSEUDOCÓDIGO SINCRONIZADO
+            {isEarlyExit
+              ? "PSEUDOCÓDIGO — EARLY EXIT"
+              : "PSEUDOCÓDIGO SINCRONIZADO"}
           </span>
         </div>
 
@@ -46,9 +61,9 @@ export default function BubbleSortPseudocodePanel({
         </div>
       </div>
 
-      {/* Generic Canonical Pseudocode Block */}
+      {/* Synchronized Pseudocode Block */}
       <div className="bg-[#030614]/90 rounded-lg p-3 border border-white/10 space-y-0.5 overflow-x-auto select-none">
-        {BUBBLE_SORT_PSEUDOCODE.map((line) => {
+        {pseudocodeLines.map((line) => {
           const isPrimary = line.id === highlight.primaryLineId;
           const isActive = highlight.activeLineIds.includes(line.id);
 
@@ -56,7 +71,10 @@ export default function BubbleSortPseudocodePanel({
           let badge = null;
 
           if (isPrimary) {
-            if (highlight.swapExecuted) {
+            if (line.id === "BREAK_STATEMENT") {
+              rowStyle =
+                "bg-emerald-950/50 text-emerald-200 border-l-2 border-emerald-400 font-bold px-1.5 py-0.5 rounded-r shadow-sm shadow-emerald-500/30";
+            } else if (highlight.swapExecuted) {
               rowStyle =
                 "bg-purple-950/40 text-purple-200 border-l-2 border-purple-400 font-bold px-1.5 py-0.5 rounded-r shadow-sm shadow-purple-500/20";
             } else if (highlight.conditionResult === "FALSE") {
@@ -85,6 +103,22 @@ export default function BubbleSortPseudocodePanel({
                 </span>
               );
             }
+          }
+
+          if (line.id === "CHECK_EARLY_EXIT" && highlight.conditionLineId === "CHECK_EARLY_EXIT") {
+            badge = (
+              <span className="ml-2 text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold tracking-wider">
+                0 TROCAS (VERDADEIRO)
+              </span>
+            );
+          }
+
+          if (line.id === "BREAK_STATEMENT" && isPrimary) {
+            badge = (
+              <span className="ml-2 text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 font-bold tracking-wider animate-pulse">
+                ⚡ TÉRMINO ANTECIPADO
+              </span>
+            );
           }
 
           if (line.id === "SWAP_STATEMENT" && highlight.swapExecuted) {

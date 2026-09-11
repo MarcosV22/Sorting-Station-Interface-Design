@@ -184,17 +184,47 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 - **Dependências:** P0.1.
 - **Risco:** Incompatibilidade em modo de navegação anônima (exige fallback gracioso em memória).
 - **Critério de Aceite:** Ao recarregar a página, a fase desbloqueada mais alta e os recordes são restaurados.
-- **Status:** `EM PLANEJAMENTO`.
+- **Status:** `IMPLEMENTADO` (2026-09-11 via ADR 0006; 86 testes unitários passando 100% verde).
 
 ---
 
-### P1.7. Pontuação Pedagógica e Tempo como Recurso Secundário
-- **Objetivo:** Estruturar um cálculo de pontuação baseado na precisão (mínimo de comparações e trocas desnecessárias, penalizando erros e dicas). O tempo transcorrido deve ser exibido como métrica secundária e puramente opcional, nunca punitiva.
-- **Valor para o Aluno:** Evita a ansiedade gerada por cronômetros decrescentes, priorizando a qualidade do raciocínio lógico.
-- **Dependências:** P0.1.
-- **Risco:** Gamificação distorcida favorecendo velocidade em detrimento do entendimento.
-- **Critério de Aceite:** A pontuação máxima é alcançada executando o protocolo com 0 erros e 0 dicas, independente do tempo gasto.
-- **Status:** `EM PLANEJAMENTO`.
+### P1.7. Pontuação do Protocolo e Tempo Descritivo
+- **Objetivo:** Estruturar um cálculo lúdico e transparente de pontuação por fase: `score = max(0, 100 - errors * 10 - hintsUsed * 5)`. Comparações e trocas são invariantes do algoritmo e NÃO afetam o score. O tempo transcorrido (`elapsedTimeMs`) é registrado e exibido como métrica factual secundária, puramente opcional, sem influência na pontuação e sem induzir ansiedade por velocidade.
+- **Valor para o Aluno:** Oferece feedback claro de conformidade técnica sem ansiedade temporal, valorizando a reflexão lógica e desencorajando chutes aleatórios ao subsidiar o uso de dicas pedagógicas (custo da dica = metade do erro).
+- **Dependências:** P0.1, P1.6.
+- **Risco:** Desestímulo ao uso legítimo de dicas ou confusão entre pontuação do jogo e avaliação formal de aprendizagem.
+- **Critério de Aceite:** Execução com 0 erros e 0 dicas obtém pontuação 100, independente do tempo gasto. Comparações, trocas e tempo não afetam o score. A fórmula é pública, determinística e sem variáveis ocultas. Evolução do schema de persistência para v2 com migração segura de v1.
+- **Status:** `IMPLEMENTADO` (2026-09-11 via ADR 0007; 106 testes automatizados passando 100% verde; Schema v2 implementado com migração retrocompatível).
+
+---
+
+### P1.8. Modo Desafio / Variante Bubble Sort Early Exit
+- **Objetivo:** Adicionar uma variante opcional otimizada do Bubble Sort que detecta quando uma passada completa ocorre sem trocas (`swapsInCurrentPass === 0`), concluindo a execução antecipadamente.
+- **Valor para o Aluno:** Permite contrapor diretamente a complexidade do algoritmo canônico ($n(n-1)/2$ comparações fixas) com o melhor caso formal ($\Omega(n)$) e entender as limitações da otimização em casos desfavoráveis (como elementos na cauda).
+- **Dependências:** P0.1, P1.4, P1.6, P1.7, ADR 0008.
+- **Risco:** Misturar as regras da campanha didática canônica com a variante ou poluir a pontuação com comparações evitadas (mitigado pelo motor unificado com tipagem estrita `CANONICAL` vs `EARLY_EXIT`, preservação da fórmula P1.7 e isolamento do storage Schema v2).
+- **Critério de Aceite:** Variante `EARLY_EXIT` interrompe a esteira ao término da primeira passada sem trocas; `CANONICAL` preserva rigorosamente todas as comparações originais; 3 cenários canônicos (já ordenado, quase ordenado e pior caso); tela de resultado exibe comparações executadas vs canônicas e comparações evitadas sem pontuação extra; replay sincronizado com pseudocódigo de 14 linhas da variante; desbloqueio derivado da conclusão da campanha sem IDs artificiais; 122 testes passando 100% verde.
+- **Status:** `IMPLEMENTADO` (2026-09-11 via ADR 0008; 122 testes automatizados aprovados).
+
+---
+
+### P1.9. Infraestrutura Global de Geração Procedural de Vetores
+- **Objetivo:** Implementar gerador determinístico desacoplado com PRNG Mulberry32 (`seed -> [vetor]`) atendendo a perfis didáticos configuráveis (constraints agnósticas) para todos os algoritmos atuais e futuros do Sorting Station.
+- **Valor para o Aluno:** Rejogabilidade infinita com sementes reprodutíveis e desafios customizados para sala de aula e pesquisa acadêmica, eliminando a memorização mecânica de vetores estáticos.
+- **Dependências:** P0.1, P1.8, ADR 0009.
+- **Risco:** Misturar regras de geração com motores específicos de ordenação ou criar loops de rejeição/estatísticos (mitigado pelo módulo puro `src/game/generation/` com zero imports de `sorting/`, sampling Fisher-Yates sem colisões, fallback estruturado determinístico e falha explícita com `ArrayGenerationError`).
+- **Critério de Aceite:** Geração 100% determinística para sementes numéricas ou textuais; garantia de integridade de tamanho, limites e ausência de duplicados (suportando também `allowDuplicates: true`); preset `BUBBLE_CAMPAIGN_CONSTRAINTS` garantindo vetores não ordenados, não reversos e com ao menos um swap e um keep; integração à campanha regular (F1: 4, F2: 5, F3: 6 elementos); preservação de arrays fixos no tutorial e no Modo Desafio; retenção de vetor e semente em repetições de fase (`handleRepeat`); preservação de replay consumindo unicamente `initialArray` e `history` sem regeneração por seed; Schema v2 do localStorage mantido intacto; 157 testes automatizados aprovados no Vitest.
+- **Status:** `IMPLEMENTADO` (2026-09-11 via ADR 0009; 31 testes unitários dedicados aprovados).
+
+---
+
+### P1.10. Briefing dos Modos de Jogo
+- **Objetivo:** Implementar tela intermediária de briefing orientada a dados (`ProtocolModeBriefingScreen`) após a seleção de qualquer modo de jogo (Treinamento Regular vs Modo Desafio), desacoplando a escolha da entrada imediata na esteira.
+- **Valor para o Aluno:** Fornece contextualização cognitiva prévia essencial (objetivo operacional, regras de tomada de decisão na esteira, particularidades algorítmicas da variante e métricas em foco) sem sobrecarga, preparando o operador antes de submetê-lo à manipulação cinestésica.
+- **Dependências:** P1.8, P1.9, ADR 0010.
+- **Risco:** Fadiga de leitura ou consumo precipitado de sementes procedurais (mitigado por layout em 4 cartões concisos com ícones, botão VOLTAR sem efeitos colaterais e disparo da geração procedural exclusivamente no clique do CTA de início).
+- **Critério de Aceite:** Nenhum modo entra direto na fase; dados e textos estritamente distintos para Canônico e Early Exit; botão VOLTAR retorna com segurança à tela de origem (`home` ou `campaign-complete`) sem gerar vetores, sem alterar o storage e sem mutação de progresso; semente/vetor gerados exclusivamente no clique de "INICIAR TREINAMENTO"; Modo Desafio inicia seus cenários curados via "INICIAR DESAFIO"; componente 100% genérico e reutilizável para futuros protocolos (Selection, Insertion, etc.); 169 testes passando 100% verde no Vitest.
+- **Status:** `IMPLEMENTADO` (2026-09-11 via ADR 0010; 12 testes unitários dedicados aprovados).
 
 ---
 

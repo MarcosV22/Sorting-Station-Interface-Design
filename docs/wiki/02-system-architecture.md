@@ -109,13 +109,13 @@ type Screen =
 | `HomeScreen` | `onHowToPlay` | `"tutorial"` | Direciona o jogador para a mesma explicação ([`src/App.tsx`](../../src/App.tsx)) |
 | `TutorialScreen` | `onBack` | `"home"` | Retorna para a tela inicial ([`src/App.tsx`](../../src/App.tsx)) |
 | `TutorialScreen` | `onUnderstood` | `"game"` | Inicia o jogo na fase atual ([`src/App.tsx`](../../src/App.tsx)) |
-| `GameScreen` | `onComplete` | `"result"` | Armazena `{ comparisons, swaps, errors, hintsUsed, finalArray, initialArray, history }` em `result` e consolida em `phaseResults` ([`src/App.tsx`](../../src/App.tsx)) |
+| `GameScreen` | `onComplete` | `"result"` | Armazena `{ comparisons, swaps, errors, hintsUsed, finalArray, initialArray, history, seed }` em `result` e consolida em `phaseResults` ([`src/App.tsx`](../../src/App.tsx)) |
 | `ResultScreen` | `onViewReplay` | `"replay"` | Transita para `ReplayScreen` preservando métricas e histórico da fase em memória ([`src/App.tsx`](../../src/App.tsx), ADR 0004) |
 | `ReplayScreen` | `onBackToResult` | `"result"` | Retorna para `ResultScreen` sem perdas ou mutações em `result` ou `phaseResults` ([`src/App.tsx`](../../src/App.tsx)) |
-| `ResultScreen` | `onRepeat` | `"game"` | Define `result = null`, reiniciando a mesma fase ([`src/App.tsx`](../../src/App.tsx)) |
-| `ResultScreen` | `onNext` | `"game"` ou `"campaign-complete"` | Se `phase < PHASES.length`, incrementa `phase`; se na fase final, transita para `"campaign-complete"` ([`src/App.tsx`](../../src/App.tsx), ADR 0002) |
+| `ResultScreen` | `onRepeat` | `"game"` | Define `result = null`, reiniciando a fase com o **MESMO vetor** e **MESMA semente** ([`src/App.tsx`](../../src/App.tsx), ADR 0009) |
+| `ResultScreen` | `onNext` | `"game"` ou `"campaign-complete"` | Se `phase < TOTAL_PHASES`, gera nova semente e novo vetor procedural com `generateBubblePhaseArray(phase + 1)`; se na fase final, transita para `"campaign-complete"` ([`src/App.tsx`](../../src/App.tsx), ADR 0002 e ADR 0009) |
 | `CampaignCompleteScreen` | `onReturnHome` | `"home"` | Limpa `phaseResults`, reseta `phase = 1` e retorna à tela inicial ([`src/App.tsx`](../../src/App.tsx)) |
-| `CampaignCompleteScreen` | `onRestartProtocol` | `"game"` | Limpa `phaseResults`, reseta `phase = 1` e inicia novo ciclo ([`src/App.tsx`](../../src/App.tsx)) |
+| `CampaignCompleteScreen` | `onRestartProtocol` | `"game"` | Limpa `phaseResults`, gera novo vetor procedural para a Fase 1 (`generateBubblePhaseArray(1)`), reseta `phase = 1` e inicia novo ciclo ([`src/App.tsx`](../../src/App.tsx), ADR 0009) |
 
 ---
 
@@ -126,12 +126,15 @@ O tráfego de dados é unidirecional estrito descendente (via props) e ascendent
 ```mermaid
 sequenceDiagram
     participant App as src/App.tsx
+    participant Gen as src/game/generation/
     participant Game as src/screens/GameScreen.tsx
     participant Result as src/screens/ResultScreen.tsx
     participant Replay as src/screens/ReplayScreen.tsx
     participant Campaign as src/screens/CampaignCompleteScreen.tsx
 
-    Note over App: phase = 1, currentArray = [5, 2, 4, 1]
+    Note over App: Inicia campanha (Fase 1)
+    App->>Gen: generateBubblePhaseArray(1)
+    Gen-->>App: { values: [readonly number[]], seed }
     App->>Game: render(initialArray, phase, onComplete, key)
     Note over Game: Usuário opera via FSM pura.<br/>Dicas registradas via sessionMetrics.
     Game->>App: onComplete({ comparisons, swaps, errors, hintsUsed, finalArray, initialArray, history })

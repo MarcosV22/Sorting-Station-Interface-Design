@@ -4,7 +4,9 @@ export interface PhaseResult {
   swaps: number;
   errors: number;
   hintsUsed: number;
-  finalArray: number[];
+  finalArray: readonly number[];
+  score?: number;
+  elapsedTimeMs?: number;
 }
 
 export interface CampaignSummary {

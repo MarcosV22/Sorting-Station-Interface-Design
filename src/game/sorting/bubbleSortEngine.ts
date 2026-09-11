@@ -7,7 +7,9 @@
  */
 
 import type {
+  BubbleSortOptions,
   BubbleSortState,
+  BubbleSortVariant,
   ExpectedComparison,
   StepRecord,
   UserDecision,
@@ -46,7 +48,9 @@ export function calculateBubbleSortProgress(state: BubbleSortState): number {
  */
 export function createBubbleSortState(
   values: readonly number[],
+  options?: BubbleSortOptions,
 ): BubbleSortState {
+  const variant: BubbleSortVariant = options?.variant ?? "CANONICAL"
   const initialValues = Object.freeze([...values])
   const currentValues = Object.freeze([...values])
   const arrayLength = initialValues.length
@@ -66,6 +70,8 @@ export function createBubbleSortState(
       completed: true,
       sortedBoundary: 0,
       history: Object.freeze([]),
+      variant,
+      earlyExitTriggered: false,
     })
   }
 
@@ -83,6 +89,8 @@ export function createBubbleSortState(
     completed: false,
     sortedBoundary: arrayLength,
     history: Object.freeze([]),
+    variant,
+    earlyExitTriggered: false,
   })
 }
 
@@ -232,6 +240,27 @@ export function executeBubbleSortStep(state: BubbleSortState): BubbleSortState {
 
   // Fim da passada atual: o maior elemento da varredura atingiu sua posição definitiva
   const newSortedBoundary = state.arrayLength - 1 - state.passIndex
+
+  // Condição formal de Early Exit (Modo Desafio / Variante Otimizada):
+  // Se a variante for EARLY_EXIT e nenhuma permuta foi efetuada em toda a passada,
+  // por indução matemática todos os elementos remanescentes já estão na ordem correta.
+  if (state.variant === "EARLY_EXIT" && newSwapsInPass === 0) {
+    return Object.freeze({
+      ...state,
+      currentValues: nextValuesFrozen,
+      comparisonIndex: state.comparisonIndex,
+      comparisons: newComparisons,
+      swaps: newSwaps,
+      swapsInCurrentPass: newSwapsInPass,
+      status: "COMPLETED",
+      completed: true,
+      sortedBoundary: 0,
+      history: nextHistory,
+      earlyExitTriggered: true,
+      terminationPass: state.passIndex + 1,
+    })
+  }
+
   const isFinalPass = state.passIndex >= state.arrayLength - 2
 
   if (isFinalPass) {
@@ -248,6 +277,7 @@ export function executeBubbleSortStep(state: BubbleSortState): BubbleSortState {
       completed: true,
       sortedBoundary: 0,
       history: nextHistory,
+      earlyExitTriggered: false,
     })
   }
 

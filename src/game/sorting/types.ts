@@ -39,6 +39,12 @@ export interface ExpectedComparison {
   readonly explanation: string
 }
 
+export type BubbleSortVariant = "CANONICAL" | "EARLY_EXIT"
+
+export interface BubbleSortOptions {
+  readonly variant?: BubbleSortVariant
+}
+
 /**
  * Estado imutável da sessão pedagógica de Bubble Sort.
  */
@@ -74,6 +80,12 @@ export interface BubbleSortState {
   readonly sortedBoundary: number
   /** Histórico completo e sequencial de passos executados */
   readonly history: readonly StepRecord[]
+  /** Variante do algoritmo ativa na sessão (CANONICAL por padrão ou EARLY_EXIT) */
+  readonly variant: BubbleSortVariant
+  /** Indica se a conclusão ocorreu por detecção de estabilização precoce (0 trocas em uma passada) */
+  readonly earlyExitTriggered: boolean
+  /** Passada (1-based) em que a conclusão antecipada ocorreu, se aplicável */
+  readonly terminationPass?: number
 }
 
 /**

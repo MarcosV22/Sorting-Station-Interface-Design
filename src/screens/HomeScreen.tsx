@@ -3,6 +3,8 @@ import GameButton from "../components/GameButton";
 interface HomeScreenProps {
   onStart: () => void;
   onHowToPlay: () => void;
+  isChallengeUnlocked?: boolean;
+  onStartChallenge?: () => void;
 }
 
 function ConveyorBelt({ y, speed }: { y: number; speed: number }) {
@@ -35,7 +37,12 @@ function ConveyorBelt({ y, speed }: { y: number; speed: number }) {
   );
 }
 
-export default function HomeScreen({ onStart, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({
+  onStart,
+  onHowToPlay,
+  isChallengeUnlocked = false,
+  onStartChallenge,
+}: HomeScreenProps) {
   return (
     <div className="relative w-full h-full min-h-full overflow-y-auto bg-[#060b1a] bg-grid scanlines flex flex-col items-center justify-start sm:justify-center py-8">
       {/* Animated belt CSS */}
@@ -113,9 +120,27 @@ export default function HomeScreen({ onStart, onHowToPlay }: HomeScreenProps) {
           <GameButton onClick={onStart} variant="primary" size="lg" className="w-full">
             ▶ &nbsp; INICIAR TURNO
           </GameButton>
+
+          {isChallengeUnlocked && onStartChallenge && (
+            <GameButton
+              onClick={onStartChallenge}
+              variant="primary"
+              size="md"
+              className="w-full border-amber-500/50 text-amber-300 hover:border-amber-400 shadow-lg shadow-amber-950/30"
+            >
+              ⚡ &nbsp; MODO DESAFIO (EARLY EXIT)
+            </GameButton>
+          )}
+
           <GameButton onClick={onHowToPlay} variant="secondary" size="md" className="w-full">
             ? &nbsp; COMO JOGAR
           </GameButton>
+
+          {!isChallengeUnlocked && (
+            <div className="text-[10px] text-white/30 tracking-widest font-mono text-center mt-1">
+              🔒 DESAFIO: COMPLETE O PROTOCOLO BUBBLE
+            </div>
+          )}
         </div>
 
         {/* Bottom status strip */}

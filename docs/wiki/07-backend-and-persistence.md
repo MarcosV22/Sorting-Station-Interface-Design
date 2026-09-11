@@ -1,133 +1,154 @@
 # 07 — Backend e Persistência: Realidade Atual, Armazenamento Local e Arquitetura Futura
 
-> **Documento canônico:** Diagnóstico de persistência, modelo de armazenamento local planejado, matriz de gatilhos operacionais e diretrizes para arquitetura futura de backend do **Sorting Station**.  
+> **Documento canônico:** Diagnóstico de persistência, modelo de armazenamento local implementado (P1.6), matriz de gatilhos operacionais e diretrizes para arquitetura futura de backend do **Sorting Station**.  
 > **Status:** Ativo / Base de Verdade da Wiki  
-> **Data:** 08/09/2026  
-> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`00-repository-inventory.md`](./00-repository-inventory.md), [`01-product-vision.md`](./01-product-vision.md), [`02-system-architecture.md`](./02-system-architecture.md).
+> **Data:** 11/09/2026 (Atualizado em P1.6)  
+> **Dependências:** [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`00-repository-inventory.md`](./00-repository-inventory.md), [`01-product-vision.md`](./01-product-vision.md), [`02-system-architecture.md`](./02-system-architecture.md), [`ADR 0006`](../../docs/adr/0006-decoupled-local-storage-persistence.md).
 
 ---
 
-Atualmente, o **Sorting Station é uma aplicação front-end estritamente client-side** (Single Page Application) e **não possui backend, servidor de aplicação, banco de dados, API remota ou qualquer mecanismo de persistência de dados em disco ou armazenamento local**.
+O **Sorting Station opera como uma Single Page Application client-side com persistência local desacoplada** via `localStorage` (módulo `src/game/persistence/`), mantendo zero custos de servidor, zero necessidade de backend centralizado e resiliência total contra recargas de página (F5).
 
 ---
 
 # PARTE 1 — ESTADO ATUAL
 
-Esta seção documenta a realidade técnica fática do repositório em relação a dados, rede e estado em tempo de execução.
+Esta seção documenta a realidade técnica fática do repositório em relação a dados, rede, armazenamento local e estado em tempo de execução.
 
 ```mermaid
 flowchart LR
-    BrowserTab["Aba do Navegador (Memória RAM)"]
-    AppState["Estado em Memória React (useState)\nscreen, phase, result, boxes"]
-    Storage[("Armazenamento Local\n(localStorage / IndexedDB)")]
-    BackendServer[("Servidor Backend / API / Banco")]
+    BrowserTab["Aba do Navegador (F5 / Reload)"]
+    AppState["Estado em Memória React (App.tsx)\nscreen, phase, result, phaseResults"]
+    Storage[("Armazenamento Local (localStorage)\nsorting_station_v1_save\n[IMPLEMENTADO - P1.6]")]
+    BackendServer[("Servidor Backend / API Remota\n[INEXISTENTE]")]
 
     BrowserTab <--> AppState
-    AppState -.->|INEXISTENTE| Storage
+    AppState <-->|StorageAdapter (Safe Fallback)| Storage
     AppState -.->|INEXISTENTE| BackendServer
 ```
 
-### 1.1. Ausência de Backend e APIs
+### 1.1. Ausência de Backend e APIs Remotas
 - **Zero Endpoints:** O repositório não contém nenhum arquivo de rota de API, função serverless ou servidor backend (`Express`, `Fastify`, `NestJS`, `Django`, `Go`, etc.).
-- **Zero Chamadas de Rede:** Não há chamadas `fetch`, `axios` ou instâncias de `WebSocket` para comunicação com APIs externas. O único tráfego de rede existente ocorre no carregamento inicial dos arquivos estáticos (`HTML`, `JS`, `CSS`) e no download das webfonts do Google Fonts.
+- **Zero Chamadas de Rede para Dados:** Não há chamadas `fetch`, `axios` ou instâncias de `WebSocket` para comunicação com APIs externas. O único tráfego de rede existente ocorre no carregamento inicial dos arquivos estáticos (`HTML`, `JS`, `CSS`) e no download das webfonts do Google Fonts.
 
-### 1.2. Ausência de Banco de Dados
-- Não há banco de dados relacional (ex.: PostgreSQL, MySQL), não relacional (ex.: MongoDB, Redis) ou embutido no navegador (IndexedDB, WebSQL).
+### 1.2. Banco de Dados Remoto Inexistente
+- Não há banco de dados remoto relacional (ex.: PostgreSQL, MySQL), não relacional (ex.: MongoDB, Redis) ou serviços BaaS (Firebase, Supabase).
+- Todo armazenamento persistente é **estritamente local no navegador do operador**.
 
-### 1.3. Ausência de Autenticação e Perfis
-- O sistema não possui contas de usuário, tela de login, sessões ativas, cookies de rastreamento ou tokens de autorização (como JWT). Todos os usuários operam anonimamente com o mesmo conjunto padrão de fases.
+### 1.3. Ausência de Autenticação e Perfis Remotos
+- O sistema não possui contas de usuário em servidor, tela de login, sessões ativas com token ou cookies de rastreamento. Todos os usuários operam com dados locais e privados em seu próprio dispositivo.
 
-### 1.4. Como o Estado é Mantido Hoje
-- Todo o ciclo de dados vive **exclusivamente na memória volátil da aba do navegador** através de hooks `useState` do React:
-  - Em [`src/App.tsx`](../../src/App.tsx): variáveis `screen`, `phase` e `result`;
-  - Em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx): variáveis locais `boxes`, `selected`, `comparisons`, `swaps`, `instruction`, `animating` e `hintPair`.
+### 1.4. Como o Estado é Gerenciado e Separado (P1.6)
+A arquitetura separa estritamente duas categorias de estado:
 
-### 1.5. O que se Perde ao Recarregar a Página
-Caso o usuário atualize a página (F5 ou `Ctrl+R`), feche a aba ou reinicie o navegador:
-1. O estado de `screen` é reinicializado para `"home"`;
-2. A fase ativa é redefinida para `1`;
-3. Todas as métricas de fases anteriores (`comparisons`, `swaps`, relatórios de eficiência) são imediatamente apagadas;
-4. O progresso do tutorial é esquecido, obrigando o usuário a passar novamente pela tela de tutorial se clicar em "INICIAR TURNO".
+1. **Estado Volátil da Sessão (Em Memória RAM):**
+   - Em [`src/App.tsx`](../../src/App.tsx): `screen`, `result` da fase corrente, `phaseResults` acumulados na campanha em andamento;
+   - Em [`src/screens/GameScreen.tsx`](../../src/screens/GameScreen.tsx): FSM de ordenação, par sob análise, animações, histórico da fase atual;
+   - Em [`src/screens/ReplayScreen.tsx`](../../src/screens/ReplayScreen.tsx): frame de inspeção retrospectiva corrente;
+   - **Comportamento em Reset:** Clicar em "VOLTAR AO INÍCIO" (`handleReturnHome`) ou "REJOGAR PROTOCOLO" (`handleRestartProtocol`) reinicializa os arrays voláteis de sessão, mas **NÃO apaga o progresso gravado em disco**.
 
----
-
-# PARTE 2 — PERSISTÊNCIA LOCAL PLANEJADA (LOCALSTORAGE) `[PLANEJADO - P1]`
-
-A evolução mais imediata, econômica e adequada para o formato do projeto é a introdução de uma camada de **persistência local desacoplada** via `localStorage` do navegador, eliminando a volatilidade sem incorrer em custos de servidor.
+2. **Progresso Persistente de Longo Prazo (Armazenamento Local Desacoplado):**
+   - Gerenciado exclusivamente através de `src/game/persistence/`;
+   - Restaurado na inicialização da aplicação (inclusive após recarregar a página com F5);
+   - Preservado entre sessões e reinicializações de protocolo.
 
 ---
 
-## 2.1. Escopo de Dados a Persistir Localmente
+# PARTE 2 — PERSISTÊNCIA LOCAL IMPLEMENTADA `[IMPLEMENTADO - P1.6]` (ADR 0006)
 
-A camada de persistência local deve armazenar os seguintes blocos funcionais:
+Conforme deliberado no [ADR 0006](../../docs/adr/0006-decoupled-local-storage-persistence.md), a persistência local opera com isolamento total dos componentes React, garantindo resiliência defensiva e conformidade pedagógica.
+
+---
+
+## 2.1. O que É Persistido vs. O que NÃO É Persistido
+
+| Categoria | Dado | Persistido? | Justificativa Arquitetural |
+| :--- | :--- | :---: | :--- |
+| **Campanha** | `unlockedPhases` | **SIM** | Registra o nível de fases desbloqueadas pelo operador para fins de progressão e futuros seletores. Limitado estritamente por `PHASES.length` (3). Não altera a fase inicial da sessão (novo turno sempre inicia na Fase 1). |
+| **Campanha** | `highestPhaseReached` | **SIM** | Registra a maior fase alcançada pelo operador na campanha histórica (progresso/desbloqueio). Não determina a fase ativa da sessão (uma nova sessão sempre inicia na Fase 1). |
+| **Campanha** | `hasCompletedTutorial` | **SIM** | Evita forçar a leitura do tutorial toda vez que o operador clica em "INICIAR TURNO". O tutorial permanece acessível a qualquer momento via "COMO JOGAR". |
+| **Recordes** | `records[phase].completed` | **SIM** | Registro factual booleano de conclusão da fase. |
+| **Recordes** | `records[phase].completedAt` | **SIM** | Timestamp ISO 8601 da conclusão mais recente. |
+| **Recordes (v2)** | `records[phase].bestScore` | **SIM** | Melhor pontuação obtida na fase (0 a 100), conforme fórmula do P1.7. |
+| **Recordes (v2)** | `records[phase].bestScoreErrors` | **SIM** | Decisões incorretas cometidas na execução da melhor pontuação. |
+| **Recordes (v2)** | `records[phase].bestScoreHintsUsed` | **SIM** | Dicas utilizadas na execução da melhor pontuação. |
+| **Recordes (v2)** | `records[phase].bestScoreElapsedTimeMs` | **SIM** | Duração factual da execução da melhor pontuação (não utilizado em desempate). |
+| **Preferências** | `soundEnabled`, `reducedMotion`, `highContrast` | **SIM** | Configurações de acessibilidade e áudio do operador. |
+| **Metadados** | `schemaVersion`, `lastUpdated` | **SIM** | Versionamento canônico (v2 em P1.7) e data da última alteração de estado. |
+| **Sessão** | `phaseResults` (resumo global) | **NÃO** | As métricas da campanha corrente pertencem ao ciclo de jogo ativo e são resetadas ao reiniciar o protocolo. |
+| **Sessão** | `result` (fase corrente) | **NÃO** | Dados voláteis da última fase jogada na rodada em andamento. |
+| **Sessão** | `history: StepRecord[]` | **NÃO** | Histórico detalhado de micro-passos consumido apenas durante a tela de replay da sessão atual. |
+| **Pedagogia** | Estrelas, rankings, notas globais | **NÃO** | **Proibido inventar métricas arbitrárias.** O sistema adota a `Pontuação do Protocolo` por fase baseada em decisões incorretas e dicas, com tempo puramente descritivo (ADR 0007). |
+
+---
+
+## 2.2. Schema Versionado Canônico (v2 — P1.7)
+
+- **Chave de Armazenamento:** `sorting_station_v1_save`
+- **Versão Atual:** `2` (migração transparente automática a partir de `schemaVersion: 1`)
 
 ```typescript
-// [PLANEJADO] Schema do armazenamento local do jogador
-interface LocalStorageSaveSchema {
-  readonly schemaVersion: number; // Controle de versão para migrações (ex.: 1)
-  readonly lastUpdated: string;   // Timestamp ISO 8601
-  
+// src/game/persistence/types.ts
+export interface PhaseRecord {
+  readonly completed: boolean;
+  readonly completedAt: string;
+  readonly bestScore?: number;
+  readonly bestScoreErrors?: number;
+  readonly bestScoreHintsUsed?: number;
+  readonly bestScoreElapsedTimeMs?: number;
+}
+
+export interface GameSaveSchema {
+  readonly schemaVersion: number; // 2
+  readonly lastUpdated: string;   // ISO 8601
   readonly campaign: {
-    readonly unlockedPhases: number; // Quantidade de fases desbloqueadas (1 a 3)
-    readonly highestPhaseReached: number;
-    readonly hasCompletedTutorial: boolean; // Permite pular tutorial diretamente
+    readonly unlockedPhases: number;      // 1 a 3 (clamped)
+    readonly highestPhaseReached: number;  // 1 a 3 (clamped)
+    readonly hasCompletedTutorial: boolean;
   };
-
-  readonly records: Record<
-    number, // Chave: número da fase (1, 2, 3...)
-    {
-      readonly bestComparisons: number; // Menor número de comparações já alcançado
-      readonly bestSwaps: number;       // Menor número de trocas já alcançado
-      readonly maxEfficiency: number;   // Maior eficiência percentual atingida
-      readonly completedAt: string;     // Data da melhor pontuação
-    }
-  >;
-
+  readonly records: Record<number, PhaseRecord>;
   readonly preferences: {
-    readonly soundEnabled: boolean;     // Futura preferência de efeitos sonoros
-    readonly reducedMotion: boolean;    // Forçar desativação de animações cinéticas
-    readonly highContrast: boolean;     // Modo de alto contraste para acessibilidade
+    readonly soundEnabled: boolean;
+    readonly reducedMotion: boolean;
+    readonly highContrast: boolean;
   };
 }
 ```
 
 ---
 
-## 2.2. Avaliação de Prós e Contras do `localStorage`
+## 2.3. Arquitetura Defensiva e Fallback em Memória
 
-| Dimensão | Vantagens (Prós) | Limitações e Riscos (Contras) |
-| :--- | :--- | :--- |
-| **Infraestrutura e Custo** | Zero servidor, zero hospedagem, zero latência de rede. Funciona 100% offline. | Nenhuma sincronização entre dispositivos (computador do laboratório vs. celular). |
-| **Privacidade e LGPD** | 100% dos dados permanecem estritamente no dispositivo do estudante. Sem coleta remota. | Se o aluno limpar os dados de navegação ou usar aba anônima, os dados são perdidos. |
-| **Desempenho** | Operações síncronas instantâneas para payloads pequenos de JSON (< 10 KB). | Bloqueia a thread principal se utilizada para grandes volumes de dados (não aplicável ao escopo). |
-| **Compatibilidade** | Suporte universal em todos os navegadores modernos sem bibliotecas extras. | Limite de armazenamento de ~5MB por domínio (mais que suficiente para saves do jogo). |
+A camada de persistência reside em `src/game/persistence/` e implementa o padrão **Storage Adapter**:
+
+1. **Abstração `StorageAdapter`:** Define os métodos contratuais `getItem`, `setItem` e `removeItem`.
+2. **`MemoryStorageAdapter`:** Implementação 100% volátil em memória para testes unitários isolados e fallback automático.
+3. **`createSafeStorage()`:** Envolve qualquer storage real com tratamento estrito de exceções:
+   - **`SecurityError`:** Lançado por navegadores em contextos de sandbox restritos ou modo anônimo severo;
+   - **`QuotaExceededError`:** Lançado quando a cota do domínio é ultrapassada;
+   - **Comportamento:** Ao capturar qualquer exceção, a operação é redirecionada de forma transparente para um `MemoryStorageAdapter` em memória, emitindo aviso em `console.warn` e **impedindo a quebra da aplicação**.
+4. **Validação Estrita e Migração (`validateAndMigrateSaveData`):**
+   - Não utiliza conversão cega (`as`) em dados externos;
+   - Sanitiza tipos inválidos, descarta chaves espúrias e clampa valores numéricos;
+   - Migração explícita `v1 -> v2`: saves válidos de `schemaVersion: 1` têm todos os seus dados preservados (`unlockedPhases`, `highestPhaseReached`, `hasCompletedTutorial`, `records`, `preferences`), sendo promovidos com segurança para `schemaVersion: 2`;
+   - Caso o payload JSON esteja corrompido ou o `schemaVersion` seja desconhecido/inválido, descarta com segurança e restaura o estado padrão (`createDefaultSaveData`).
 
 ---
 
-## 2.3. Cuidados Obrigatórios e Versionamento do Schema Local
+## 2.4. Regras de Atualização de Recordes de Fase (ADR 0007)
 
-Ao implementar a persistência local, as seguintes diretrizes de segurança de software devem ser seguidas:
+Ao concluir uma fase com novos dados de pontuação (`PhaseScoreData`), a função pura `recordPhaseCompletion` avalia a substituição do recorde existente:
 
-1. **Namespace e Prefixo Único:**  
-   Utilizar uma chave com namespace e versão explícita (ex.: `sorting_station_v1_save`) para evitar colisões com outros aplicativos que possam rodar no mesmo host/porta do ambiente Figma Make.
-2. **Defensividade contra Corrupção de Dados:**  
-   Todo acesso a `localStorage.getItem` e `JSON.parse` deve ser encapsulado em blocos `try/catch`. Caso o JSON esteja corrompido ou o usuário tenha editado o storage manualmente, a aplicação deve descartar o dado inválido de forma transparente e inicializar o estado padrão sem quebrar a renderização:
-   ```typescript
-   // [PLANEJADO] Exemplo de carregamento resiliente
-   export function loadLocalSave(): LocalStorageSaveSchema {
-     try {
-       const raw = localStorage.getItem("sorting_station_v1_save");
-       if (!raw) return DEFAULT_SAVE_STATE;
-       const parsed = JSON.parse(raw);
-       return migrateSaveData(parsed);
-     } catch (err) {
-       console.warn("Falha ao ler save local; restaurando padrões:", err);
-       return DEFAULT_SAVE_STATE;
-     }
-   }
-   ```
-3. **Mecanismo de Migração de Versão (`migrateSaveData`):**  
-   O campo `schemaVersion` permite atualizar o formato dos dados em versões futuras (adicionando novas chaves ou fases) sem apagar o progresso anterior do estudante.
+1. **Substituição por Pontuação Superior:**
+   Se `newScore > bestScore`, os dados de pontuação (`bestScore`, `bestScoreErrors`, `bestScoreHintsUsed`, `bestScoreElapsedTimeMs`) são integralmente atualizados com a nova rodada;
+2. **Substituição por Desempate de Precisão (Menos Erros):**
+   Se `newScore === bestScore` E `newErrors < bestScoreErrors`, o recorde é atualizado para refletir a execução mais precisa;
+3. **Imutabilidade em Pontuação Inferior ou Mais Erros:**
+   Se `newScore < bestScore`, ou se em empate `newErrors >= bestScoreErrors`, o recorde atual é **estritamente preservado**;
+4. **Veto ao Desempate por Tempo:**
+   O tempo decorrido (`elapsedTimeMs`) **NUNCA** é usado como critério de desempate. Caso score e erros sejam idênticos, o recorde pré-existente permanece inalterado. O jogo não estimula pressa, mas foco reflexivo e conceitual;
+5. **Preservação de Conclusão:**
+   `completed: true` e `completedAt` mantêm o registro factual da execução mais recente, independentemente da substituição do recorde de pontuação.
 
 ---
 

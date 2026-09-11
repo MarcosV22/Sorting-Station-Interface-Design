@@ -1,6 +1,11 @@
-import type { StepRecord } from "../sorting/types";
+import type { BubbleSortVariant, StepRecord } from "../sorting/types";
 
 export type ReplayAction = "INITIAL" | "SWAP" | "KEEP";
+
+export interface ReplayFrameOptions {
+  readonly variant?: BubbleSortVariant;
+  readonly earlyExitTriggered?: boolean;
+}
 
 /**
  * Representação imutável de um quadro individual da reprodução (replay)
@@ -35,6 +40,10 @@ export interface ReplayFrame {
   readonly explanation: string;
   /** Índices dos elementos já definitivamente consolidados neste quadro */
   readonly sortedIndices: readonly number[];
+  /** Variante algorítmica da execução reproduzida */
+  readonly variant?: BubbleSortVariant;
+  /** Indica se esta execução foi encerrada precocemente por Early Exit */
+  readonly earlyExitTriggered?: boolean;
 }
 
 /**
@@ -45,7 +54,8 @@ export interface ReplayFrame {
  */
 export function buildReplayFrames(
   initialArray: readonly number[],
-  history: readonly StepRecord[]
+  history: readonly StepRecord[],
+  options?: ReplayFrameOptions
 ): readonly ReplayFrame[] {
   const n = initialArray.length;
   const totalSteps = history.length;
@@ -71,6 +81,8 @@ export function buildReplayFrames(
     explanation:
       "Configuração inicial da carga na esteira antes do primeiro micro-passo.",
     sortedIndices: Object.freeze(initialSorted),
+    variant: options?.variant ?? "CANONICAL",
+    earlyExitTriggered: false,
   });
 
   const frames: ReplayFrame[] = [initialFrame];
@@ -78,6 +90,8 @@ export function buildReplayFrames(
   // Quadros 1..N derivados dos StepRecords registrados
   for (let k = 0; k < totalSteps; k++) {
     const record = history[k];
+    const isLastStep = k === totalSteps - 1;
+    const isEarlyExit = Boolean(options?.earlyExitTriggered && isLastStep);
     const stepNumber = k + 1;
     const passNumber = record.passIndex + 1;
     const comparisonNumber = record.comparisonIndex + 1;
@@ -88,9 +102,11 @@ export function buildReplayFrames(
     const isEndOfPass = record.comparisonIndex >= n - 2 - record.passIndex;
     if (isEndOfPass) {
       boundary = n - 1 - record.passIndex;
-      if (record.passIndex >= n - 2) {
+      if (record.passIndex >= n - 2 || isEarlyExit) {
         boundary = 0;
       }
+    } else if (isEarlyExit) {
+      boundary = 0;
     }
 
     const currentSorted: number[] = [];
@@ -100,9 +116,13 @@ export function buildReplayFrames(
 
     const action: ReplayAction = record.swapped ? "SWAP" : "KEEP";
     const actionLabel = record.swapped ? "TROCA REALIZADA" : "ORDEM MANTIDA";
-    const explanation = record.swapped
+    let explanation = record.swapped
       ? `${record.leftValue} > ${record.rightValue}: troca realizada entre as caixas #${record.indices[0] + 1} e #${record.indices[1] + 1}.`
       : `${record.leftValue} ≤ ${record.rightValue}: ordem correta mantida entre as caixas #${record.indices[0] + 1} e #${record.indices[1] + 1}.`;
+
+    if (isEarlyExit) {
+      explanation += " Passada concluída sem trocas. O protocolo detectou que a esteira já está ordenada e encerrou a execução antecipadamente.";
+    }
 
     const frame: ReplayFrame = Object.freeze({
       stepNumber,
@@ -119,6 +139,8 @@ export function buildReplayFrames(
       actionLabel,
       explanation,
       sortedIndices: Object.freeze(currentSorted),
+      variant: options?.variant ?? "CANONICAL",
+      earlyExitTriggered: isEarlyExit,
     });
 
     frames.push(frame);

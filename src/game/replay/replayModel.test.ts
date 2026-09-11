@@ -177,4 +177,51 @@ describe("Replay Model — Camada Pura de Replay", () => {
     expect(getReplayFrame(frames, 1).stepNumber).toBe(1);
     expect(getReplayFrame(frames, 999).stepNumber).toBe(1);
   });
+
+  describe("Replay com Variante EARLY_EXIT e Metadados do Modo Desafio", () => {
+    it("propaga metadados de variante CANONICAL por padrão", () => {
+      let state = createBubbleSortState([5, 2, 4, 1]);
+      while (!state.completed) {
+        state = executeBubbleSortStep(state);
+      }
+
+      const frames = buildReplayFrames(state.initialValues, state.history);
+      expect(frames[0].variant).toBe("CANONICAL");
+      expect(frames[0].earlyExitTriggered).toBe(false);
+      expect(frames[frames.length - 1].variant).toBe("CANONICAL");
+      expect(frames[frames.length - 1].earlyExitTriggered).toBe(false);
+    })
+
+    it("cenário de término antecipado: consolida todos os índices e anexa explicação factual no último frame", () => {
+      let state = createBubbleSortState([12, 25, 47, 63, 88], { variant: "EARLY_EXIT" });
+      while (!state.completed) {
+        state = executeBubbleSortStep(state);
+      }
+
+      expect(state.earlyExitTriggered).toBe(true);
+      expect(state.history).toHaveLength(4);
+
+      const frames = buildReplayFrames(state.initialValues, state.history, {
+        variant: "EARLY_EXIT",
+        earlyExitTriggered: true,
+      });
+
+      // Frame 0 + 4 passos reais = 5 frames (nenhum frame fantasma)
+      expect(frames).toHaveLength(5);
+
+      const lastFrame = frames[frames.length - 1];
+      expect(lastFrame.stepNumber).toBe(4);
+      expect(lastFrame.totalSteps).toBe(4);
+      expect(lastFrame.action).toBe("KEEP");
+      expect(lastFrame.variant).toBe("EARLY_EXIT");
+      expect(lastFrame.earlyExitTriggered).toBe(true);
+
+      // Todos os elementos aparecem formalmente como consolidados
+      expect(lastFrame.sortedIndices).toEqual([0, 1, 2, 3, 4]);
+
+      // Explicação pedagógica factual sobre término antecipado
+      expect(lastFrame.explanation).toContain("Passada concluída sem trocas");
+      expect(lastFrame.explanation).toContain("encerrou a execução antecipadamente");
+    });
+  });
 });

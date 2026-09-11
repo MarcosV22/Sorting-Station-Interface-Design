@@ -1,11 +1,13 @@
 import GameButton from "../components/GameButton";
 import { PhaseResult, calculateCampaignSummary } from "../game/campaign/campaignSummary";
+import { formatElapsedTime } from "../game/session";
 
 interface CampaignCompleteScreenProps {
   results: PhaseResult[];
   totalPhases: number;
   onReturnHome: () => void;
   onRestartProtocol?: () => void;
+  onStartChallenge?: () => void;
 }
 
 export default function CampaignCompleteScreen({
@@ -13,6 +15,7 @@ export default function CampaignCompleteScreen({
   totalPhases,
   onReturnHome,
   onRestartProtocol,
+  onStartChallenge,
 }: CampaignCompleteScreenProps) {
   const summary = calculateCampaignSummary(results, totalPhases);
 
@@ -180,6 +183,20 @@ export default function CampaignCompleteScreen({
                 </div>
 
                 <div className="flex flex-col gap-1 text-xs font-mono">
+                  {res.score !== undefined && (
+                    <div className="flex justify-between text-cyan-300 font-bold pb-1 mb-1 border-b border-white/10">
+                      <span className="text-[10px] uppercase tracking-wider">Pontuação do Protocolo:</span>
+                      <span className="text-xs">{res.score} / 100</span>
+                    </div>
+                  )}
+                  {res.elapsedTimeMs !== undefined && (
+                    <div className="flex justify-between text-white/60">
+                      <span>Tempo de Operação:</span>
+                      <span className="text-emerald-300 font-bold">
+                        {formatElapsedTime(res.elapsedTimeMs)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-white/60">
                     <span>Comparações:</span>
                     <span className="text-cyan-300 font-bold">{res.comparisons}</span>
@@ -218,7 +235,18 @@ export default function CampaignCompleteScreen({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
-          <GameButton onClick={onReturnHome} variant="primary" size="lg" className="min-w-[200px]">
+          {onStartChallenge && (
+            <GameButton
+              onClick={onStartChallenge}
+              variant="primary"
+              size="lg"
+              className="min-w-[240px] border-amber-500/50 text-amber-300 hover:border-amber-400 shadow-lg shadow-amber-950/40"
+            >
+              ⚡ &nbsp; EXPERIMENTAR MODO DESAFIO: EARLY EXIT →
+            </GameButton>
+          )}
+
+          <GameButton onClick={onReturnHome} variant="secondary" size="lg" className="min-w-[180px]">
             ⌂ &nbsp; VOLTAR AO INÍCIO
           </GameButton>
 

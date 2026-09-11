@@ -29,18 +29,21 @@ src/
 ├── vite-env.d.ts        # Declarações de tipos do cliente Vite
 ├── screens/             # Telas completas da aplicação (orquestradas por App.tsx)
 │   ├── HomeScreen.tsx   # Tela de boas-vindas e apresentação temática da Central Logística
+│   ├── ProtocolModeBriefingScreen.tsx # Briefing intermediário orientado a dados (Canônico / Desafio)
 │   ├── TutorialScreen.tsx # Tutorial explicativo com demonstração cíclica animada
 │   ├── GameScreen.tsx   # Tela de jogo interativa: esteira, seleção e lógica de ordenação
 │   ├── ResultScreen.tsx # Relatório de término de fase: estatísticas e pseudocódigo
+│   ├── ReplayScreen.tsx # Reprodução retrospectiva passo a passo com pseudocódigo sincronizado
 │   └── CampaignCompleteScreen.tsx # Relatório final de homologação do protocolo com resumo global
 ├── game/
+│   ├── briefing/        # Catálogo e tipos de dados para briefings orientados a dados (P1.10 / ADR 0010)
 │   ├── campaign/        # Agregação pura de métricas da campanha (PhaseResult, calculateCampaignSummary)
-│   │   ├── campaignSummary.ts
-│   │   └── campaignSummary.test.ts
-│   ├── sorting/         # Engine pedagógica pura de Bubble Sort (FSM)
+│   ├── generation/      # Geração procedural global e determinística de vetores (P1.9 / ADR 0009)
+│   ├── persistence/     # Armazenamento local via localStorage (Schema v2 / ADR 0006 e 0007)
+│   ├── replay/          # Modelo de quadros de replay e sincronização de pseudocódigo
+│   ├── session/         # Métricas de telemetria descritiva e pontuação do protocolo
+│   ├── sorting/         # Engine pedagógica pura de Bubble Sort (FSM Canônica e Early Exit)
 │   └── tutorial/        # Guia pedagógico e definições do tutorial interativo
-│       ├── tutorialGuide.ts
-│       └── tutorialGuide.test.ts
 └── components/          # Componentes visuais atômicos e reutilizáveis
     ├── GameButton.tsx   # Botão estilizado com variantes sci-fi (primary, secondary, danger, ghost)
     ├── InstructionPanel.tsx # Faixa de feedback ao usuário com 4 tipos de severidade
@@ -53,19 +56,27 @@ src/
 
 ## 3. Arquitetura de Telas e Navegação
 
-A navegação da aplicação não utiliza rotas de URL, mas sim uma máquina de telas baseada no estado `screen` mantido em [`src/App.tsx`](../../src/App.tsx).
+A navegação da aplicação não utiliza rotas de URL, mas sim uma máquina de telas baseada no estado `screen` mantido em [`src/App.tsx`](../../src/App.tsx) (`"home" | "briefing" | "tutorial" | "game" | "result" | "replay" | "campaign-complete"`).
 
 ```mermaid
-flowchart LR
-    Home["HomeScreen\n(Início)"] -->|"onStart / onHowToPlay"| Tutorial["TutorialScreen\n(Explicação)"]
+flowchart TD
+    Home["HomeScreen\n(Seleção de Modo)"] -->|"onStart (Treinamento)"| Briefing["ProtocolModeBriefingScreen\n(Briefing Canônico ou Desafio)"]
+    Home -->|"onStartChallenge"| Briefing
+    Home -->|"onHowToPlay"| Tutorial["TutorialScreen\n(Treinamento Guiado)"]
+    Briefing -->|"onBack"| Home
+    Briefing -->|"onStart (CTA Treinamento / sem tutorial)"| Tutorial
+    Briefing -->|"onStart (CTA Treinamento / com tutorial)"| Game["GameScreen\n(Ordenação Ativa)"]
+    Briefing -->|"onStart (CTA Desafio)"| Game
     Tutorial -->|"onBack"| Home
-    Tutorial -->|"onUnderstood"| Game["GameScreen\n(Ordenação Ativa)"]
+    Tutorial -->|"onUnderstood"| Game
     Game -->|"onComplete"| Result["ResultScreen\n(Estatísticas)"]
     Result -->|"onRepeat"| Game
-    Result -->|"onNext (fases 1 e 2)"| Game
-    Result -->|"onNext (fase 3)"| Complete["CampaignCompleteScreen\n(Protocolo Concluído)"]
+    Result -->|"onNext (fases intermediárias)"| Game
+    Result -->|"onViewReplay"| Replay["ReplayScreen\n(Auditoria Passo a Passo)"]
+    Replay -->|"onBackToResult"| Result
+    Result -->|"onNext (fase final)"| Complete["CampaignCompleteScreen\n(Protocolo Concluído)"]
     Complete -->|"onReturnHome"| Home
-    Complete -->|"onRestartProtocol"| Game
+    Complete -->|"onRestartProtocol / onStartChallenge"| Briefing
 ```
 
 ### 3.1. `src/App.tsx` (Componente Raiz)
@@ -80,14 +91,29 @@ flowchart LR
   - Forçar a remontagem de `GameScreen` através da prop `key={'game-phase-${phase}'}` ([`src/App.tsx`](../../src/App.tsx)).
 
 ### 3.2. `src/screens/HomeScreen.tsx`
-- **Responsabilidades:** Recepção do jogador, ambientação narrativa na "Central Logística v2.0" e chamada para ação.
+- **Responsabilidades:** Recepção do jogador, ambientação narrativa na "Central Logística v2.0" e pontos de entrada para o treinamento regular e para o Modo Desafio.
 - **Destaques de Implementação:**
   - Exibe duas esteiras animadas decorativas de fundo com caixas em movimento contínuo (`conveyor-track`);
-  - Botões "INICIAR TURNO" e "COMO JOGAR" ambos disparam `onStart()` / `onHowToPlay()`, levando ao tutorial;
+  - Botão "INICIAR TURNO" inicia um novo turno da campanha sempre na Fase 1 (ou direciona para o tutorial caso o operador ainda não o tenha concluído); o botão "COMO JOGAR" abre o tutorial interativo a qualquer momento;
+  - **Ponto de Acesso ao Modo Desafio (P1.8):** Exibe o botão destacado `[ ⚡ MODO DESAFIO (EARLY EXIT) ]` quando `isChallengeUnlocked === true`, ou o badge informativo com cadeado e requisito (`BLOQUEADO — CONCLUA AS 3 FASES CANÔNICAS`) quando bloqueado;
   - Rodapé com tags de status dos protocolos: `BUBBLE SORT` (verde ativo), `INSERTION SORT` e `SELECTION SORT` (cinza inativo).
-- **Callbacks:** `onStart: () => void`, `onHowToPlay: () => void`.
+- **Callbacks e Props:** `onStart: () => void`, `onHowToPlay: () => void`, `isChallengeUnlocked?: boolean`, `onStartChallenge?: () => void`.
 
-### 3.3. `src/screens/TutorialScreen.tsx`
+### 3.3. `src/screens/ProtocolModeBriefingScreen.tsx`
+- **Responsabilidades:** Tela intermediária orientada a dados e 100% agnóstica a motores específicos, responsável pelo alinhamento pedagógico prévio e preparação cognitiva do operador antes de qualquer interação motora na esteira.
+- **Destaques de Implementação:**
+  - **Arquitetura Orientada a Dados (P1.10 / ADR 0010):** Não possui strings nem condicionais hardcoded de Bubble Sort. Recebe um contrato estrito `ProtocolModeBriefing` (definido em `src/game/briefing/types.ts`) e o renderiza visualmente de forma determinística;
+  - **Pílula Superior de Status:** Exibe crachá luminoso temático (`badgeText`) com suporte a variantes visuais sci-fi (`cyan`, `amber`, `emerald`, `purple`);
+  - **Painel de Objetivo Operacional:** Seção em destaque delimitando claramente a meta daquele modo de jogo;
+  - **Procedimento na Esteira (Grid 2x2):** Quatro cartões concisos com ícones estilizados, títulos em fonte mono e descrições curtas e didáticas sobre a operação mecânica;
+  - **Particularidades do Modo:** Caixa opcional estilizada em tons quentes ou ciano detalhando sutilezas teóricas (ex.: ausência de economia no pior caso para Early Exit, neutralidade de pontuação para comparações evitadas);
+  - **Destaques de Telemetria:** Faixa horizontal inferior com 3 cartões apresentando as variáveis e restrições formais da rodada (ex.: Comparações Previstas, Critério de Término, Complexidade Temporal);
+  - **Navegação Segura e Geração Tardia:**
+    - Botão `[ ← VOLTAR ]`: Retorna à tela de seleção (`home` ou `campaign-complete`) sem gerar vetor, sem consumir sementes procedurais e sem mutação de progresso/storage;
+    - Botão `[ ▶ ${briefing.startLabel} ]`: Botão de ação primário único que efetivamente dispara a geração procedural (`generateBubblePhaseArray(1)`) e inicia a rodada.
+- **Callbacks e Props:** `briefing: ProtocolModeBriefing`, `onStart: () => void`, `onBack: () => void`.
+
+### 3.4. `src/screens/TutorialScreen.tsx`
 - **Responsabilidades:** Mini-treinamento interativo guiado que ensina fazendo a lógica elementar do Bubble Sort antes do início do turno real na Fase 1.
 - **Destaques de Implementação:**
   - **Integração com a Sorting Engine:** Não possui código duplicado de Bubble Sort; utiliza diretamente `createBubbleSortState([3, 1, 2])`, `executeUserStep`, `getExpectedComparison` e `getSortedIndices`;
@@ -101,7 +127,7 @@ flowchart LR
   - **Guarda Síncrona e Animações:** Utiliza `isActionLockedRef` e `animatingPair` com duração de 500ms, idêntica à esteira do `GameScreen`.
 - **Callbacks:** `onBack: () => void`, `onUnderstood: () => void`.
 
-### 3.4. `src/screens/GameScreen.tsx`
+### 3.5. `src/screens/GameScreen.tsx`
 - **Responsabilidades:** Interface interativa de ordenação da fase atual integrada deterministicamente à Bubble Sort Engine.
 - **Destaques de Implementação:**
   - Inicializa e mantém o estado algorítmico através de `createBubbleSortState(initialArray)`, tornando a engine a única fonte de verdade;
@@ -116,23 +142,26 @@ flowchart LR
   - Consolidação formal: elementos fixados (`OK`) são derivados diretamente de `getSortedIndices(gameState)`;
   - **Esteira Contínua em Telas Estreitas (P1.5):** Layout com contêiner rolável horizontalmente (`overflow-x-auto min-w-max`) sem `flex-wrap`, mantendo a metáfora linear contínua da esteira com 4, 5 e 6 caixas sem quebras de linha em dispositivos móveis;
   - **Avaliação de Carga Cognitiva e Pseudocódigo no Gameplay (P1.5):** O painel de pseudocódigo sincronizado é intencionalmente restrito ao `ReplayScreen`. No `GameScreen`, o operador necessita de foco perceptivo-motor na tríade `Ação Atual` $\rightarrow$ `Consequência Imediata` $\rightarrow$ `Contexto Algorítmico`. Exibir 9 linhas de pseudocódigo em tempo real durante o jogo geraria divisão de atenção (*split-attention effect*), forçaria rolagem vertical contínua e aumentaria a carga cognitiva extrínseca sem benefício pedagógico comprovado;
-  - Conclusão segura: monitora `gameState.completed` e dispara `onComplete(data: PhaseCompleteData)` após temporizador calibrado de 1200ms de feedback comemorativo.
-- **Callbacks:** `onComplete: (data: PhaseCompleteData) => void` (contendo `comparisons`, `swaps`, `errors`, `hintsUsed`, `finalArray`).
+  - Conclusão segura: monitora `gameState.completed` e dispara `onComplete(data: PhaseCompleteData)` após temporizador calibrado de 1200ms de feedback comemorativo;
+  - **Suporte a Variantes (P1.8):** Recebe `variant?: BubbleSortVariant` e instancia `createBubbleSortState(initialArray, { variant })`. Sob `EARLY_EXIT`, exibe notificação comemorativa de término antecipado quando a esteira estabiliza sem trocas e despacha `variant`, `earlyExitTriggered` e `terminationPass` em `onComplete`.
+- **Callbacks e Props:** `onComplete: (data: PhaseCompleteData) => void`, `initialArray: number[]`, `phase: number`, `totalPhases?: number`, `variant?: BubbleSortVariant`, `modeTitle?: string`.
 
-### 3.5. `src/screens/ResultScreen.tsx`
-- **Responsabilidades:** Apresentar a avaliação de desempenho descritiva após a conclusão da ordenação da fase corrente.
+### 3.6. `src/screens/ResultScreen.tsx`
+- **Responsabilidades:** Apresentar a avaliação de desempenho descritiva após a conclusão da ordenação da fase corrente ou cenário do Modo Desafio.
 - **Destaques de Implementação:**
   - Renderiza o vetor final resultante consolidado com suporte a rolagem horizontal segura em mobile;
-  - Apresenta contadores puramente factuais sob o título "MÉTRICAS DA FASE": Comparações (`comparisons`), Trocas (`swaps`), Decisões Incorretas (`errors`) e Dicas Utilizadas (`hintsUsed`);
+  - Apresenta contadores puramente factuais sob o título "MÉTRICAS DA FASE": Comparações (`comparisons`), Trocas (`swaps`), Decisões Incorretas (`errors`), Dicas Utilizadas (`hintsUsed`), Tempo de Operação e Pontuação do Protocolo;
+  - **Painel Comparativo do Modo Desafio (P1.8):** No modo `EARLY_EXIT`, exibe Comparações Executadas, Comparações Máximas Canônicas de Referência ($n(n-1)/2$), Comparações Evitadas ($\max(0, \text{canônicas} - \text{executadas})$) e Status de Early Exit (SIM/NÃO com passada de término);
+  - **Nota Pedagógica de Otimização:** Esclarece a economia de passos ou explica o motivo de não haver economia em casos de pior caso (ex.: inversão de cauda / elemento tartaruga);
+  - **Pseudocódigo Contextual:** Renderiza `BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE` quando em Modo Desafio, ou `BUBBLE_SORT_PSEUDOCODE` no modo canônico;
   - **Eliminação de Heurística:** Remoção definitiva da antiga métrica arbitrária de "Eficiência (%)", substituída integralmente pela telemetria factual descritiva (ADR 0003);
-  - **Pseudocódigo Canônico em Português (P1.5):** Utiliza a representação canônica padronizada `BUBBLE_SORT_PSEUDOCODE`, eliminando código legado em inglês;
   - **Responsividade e Scroll Seguro:** Layout com contêiner rolável verticalmente (`overflow-y-auto min-h-full`) e grid responsivo `grid-cols-1 md:grid-cols-2`, impedindo cortes em telas de baixa altura;
-  - Suporta a prop semântica `hasNextPhase`: exibe "PRÓXIMA FASE →" nas fases 1 e 2, e "CONCLUIR PROTOCOLO →" na última fase (Fase 3);
+  - Suporta a prop semântica `hasNextPhase`: exibe "PRÓXIMA FASE →" ou "PRÓXIMO CENÁRIO →", e "CONCLUIR PROTOCOLO →" ou "CONCLUIR DESAFIOS →";
   - Botão "▶ VER EXECUÇÃO" aciona `onViewReplay()` para transição ao modo replay sem perda de dados (ADR 0004);
-  - Botão "↺ REPETIR FASE" aciona `onRepeat()`; botão principal aciona `onNext()`.
-- **Callbacks:** `onRepeat: () => void`, `onNext: () => void`, `onViewReplay?: () => void`.
+  - Botão "↺ REPETIR FASE" / "↺ REPETIR CENÁRIO" aciona `onRepeat()`; botão principal aciona `onNext()`.
+- **Callbacks e Props:** `onRepeat: () => void`, `onNext: () => void`, `onViewReplay?: () => void`, `variant?: BubbleSortVariant`, `earlyExitTriggered?: boolean`, `terminationPass?: number`, `canonicalComparisons?: number`, `comparisonsAvoided?: number`.
 
-### 3.6. `src/screens/CampaignCompleteScreen.tsx`
+### 3.7. `src/screens/CampaignCompleteScreen.tsx`
 - **Responsabilidades:** Tela de homologação técnica e encerramento do Protocolo Bubble ao término de todas as fases da campanha.
 - **Destaques de Implementação:**
   - Apresenta o fechamento narrativo do setor de triagem ("Protocolo Bubble Concluído", sem falsas afirmações de aprendizado absoluto antes de pesquisas empíricas);
@@ -142,27 +171,24 @@ flowchart LR
     - Trocas Totais acumuladas ($5 + 6 + 9 = 20$);
     - Decisões Incorretas Totais (`totalErrors`);
     - Dicas Utilizadas Totais (`totalHintsUsed`).
-  - Relatório discriminado por etapa em grid responsivo com os 4 contadores (`comparisons`, `swaps`, `errors`, `hintsUsed`) e miniatura dos vetores ordenados finais;
+  - Relatório discriminado por etapa em grid responsivo com os contadores (`comparisons`, `swaps`, `errors`, `hintsUsed`, `score`, `elapsedTimeMs`) e miniatura dos vetores ordenados finais;
+  - **Acesso ao Modo Desafio (P1.8):** Botão rápido `[ ⚡ EXPERIMENTAR MODO DESAFIO: EARLY EXIT → ]` exibido quando `onStartChallenge` está disponível;
   - Botão "⌂ VOLTAR AO INÍCIO" (`onReturnHome`): reseta todos os resultados em memória, reseta para Fase 1 e retorna para `HomeScreen`;
-  - Botão "↺ REJOGAR PROTOCOLO" (`onRestartProtocol`): reseta todos os resultados em memória e inicia uma nova execução limpa na Fase 1.
-- **Callbacks:** `onReturnHome: () => void`, `onRestartProtocol?: () => void`.
+  - Botão "↺ REJOGAR PROTOCOLO" (`onRestartProtocol`): direciona para o briefing do Treinamento Regular com retorno seguro para `campaign-complete`.
+- **Callbacks:** `onReturnHome: () => void`, `onRestartProtocol?: () => void`, `onStartChallenge?: () => void`.
 
-### 3.7. `src/screens/ReplayScreen.tsx`
-- **Responsabilidades:** Reprodução visual somente-leitura da execução de qualquer fase concluída do Protocolo Bubble Sort (P1.3, ADR 0004), com pseudocódigo sincronizado em tempo real (P1.4, ADR 0005).
+### 3.8. `src/screens/ReplayScreen.tsx`
+- **Responsabilidades:** Reprodução visual somente-leitura da execução de qualquer fase concluída do Protocolo Bubble Sort (P1.3, ADR 0004), com pseudocódigo sincronizado em tempo real (P1.4, ADR 0005) e suporte à variante otimizada (P1.8, ADR 0008).
 - **Destaques de Implementação:**
-  - Consome os quadros puros imutáveis derivados por `buildReplayFrames(initialArray, history)`;
+  - Consome os quadros puros imutáveis derivados por `buildReplayFrames(initialArray, history, { variant, earlyExitTriggered })`;
   - Exibe o **Quadro 0 (Estado Inicial)** com a carga antes do primeiro passo, seguido pelos quadros sequenciais (1..N);
   - Mostra em cada passo: número do passo (`PASSO X / Y`), badge de ação (`INITIAL`, `SWAP`, `KEEP`), valores comparados, passada, comparação da passada e explicação factual concisa;
+  - **Quadro Final com Término Antecipado (P1.8):** Quando `earlyExitTriggered === true`, o quadro final consolida todos os elementos (`sortedIndices = [0..n-1]`) e anexa nota factual destacando que a ausência de trocas comprovou a ordenação do vetor, sem criação de frames fantasmas;
   - Destaque cinestésico do par ativo através de `NumberedBox` com prop `selected={true}` e consolidação de caixas ordenadas com `sorted={true}`;
-  - **Eliminação de Rótulos Redundantes (P1.5):** O `NumberedBox` já inclui internamente a identificação `#{index + 1}` no topo da caixa; rótulos duplicados abaixo das caixas foram removidos para despoluir a esteira de replay;
-  - **Esteira com Rolagem Horizontal Segura:** Contêiner rolável `overflow-x-auto min-w-max` assegurando visualização sem quebras para as 6 caixas da Fase 3 em qualquer dispositivo;
-  - **Pseudocódigo Sincronizado (P1.4):** Integração do componente reutilizável `BubbleSortPseudocodePanel`, destacando a instrução exata do frame e apresentando separadamente os valores concretos avaliados;
-  - Barra de progresso percentual da execução;
-  - Layout responsivo com rolagem vertical suave (`overflow-y-auto`) em resoluções de altura reduzida;
+  - **Pseudocódigo Sincronizado Dinâmico (P1.8):** Utiliza `BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE` quando em Modo Desafio, iluminando `CHECK_EARLY_EXIT` e `BREAK_STATEMENT` quando a interrupção precoce ocorre;
   - Painel de controles completo: `[↺ REINICIAR]`, `[← ANTERIOR]`, `[▶ REPRODUZIR]` / `[⏸ PAUSAR]` e `[PRÓXIMO →]`;
-  - Autoplay com temporizador de 1200ms que pausa automaticamente no último passo ou ao toque de navegação manual;
   - Botão "← VOLTAR AO RESULTADO" (`onBackToResult`): retorna para `ResultScreen` preservando 100% das métricas em memória.
-- **Props:** `initialArray: number[]`, `history: readonly StepRecord[]`, `phase: number`, `onBackToResult: () => void`.
+- **Props:** `initialArray: number[]`, `history: readonly StepRecord[]`, `phase: number`, `variant?: BubbleSortVariant`, `earlyExitTriggered?: boolean`, `onBackToResult: () => void`.
 
 ---
 

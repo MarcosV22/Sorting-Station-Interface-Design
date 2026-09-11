@@ -11,27 +11,36 @@ import {
   getSortedIndices,
   calculateBubbleSortProgress,
 } from "../game/sorting";
-import type { BubbleSortState, UserDecision, StepRecord } from "../game/sorting";
+import type { BubbleSortState, BubbleSortVariant, UserDecision, StepRecord } from "../game/sorting";
 import {
   createPhaseSessionMetrics,
   recordHintUsed,
+  calculateProtocolScore,
   type PhaseSessionMetrics,
-} from "../game/session/sessionMetrics";
+} from "../game/session";
 
 export interface PhaseCompleteData {
   comparisons: number;
   swaps: number;
   errors: number;
   hintsUsed: number;
-  finalArray: number[];
-  initialArray: number[];
+  finalArray: readonly number[];
+  initialArray: readonly number[];
   history: readonly StepRecord[];
+  score: number;
+  elapsedTimeMs: number;
+  variant?: BubbleSortVariant;
+  earlyExitTriggered?: boolean;
+  terminationPass?: number;
 }
 
 interface GameScreenProps {
   onComplete: (data: PhaseCompleteData) => void;
-  initialArray?: number[];
+  initialArray?: readonly number[];
   phase?: number;
+  totalPhases?: number;
+  variant?: BubbleSortVariant;
+  modeTitle?: string;
 }
 
 const INITIAL_ARRAY = [5, 2, 4, 1];
@@ -40,12 +49,15 @@ export default function GameScreen({
   onComplete,
   initialArray = INITIAL_ARRAY,
   phase = 1,
+  totalPhases = 3,
+  variant = "CANONICAL",
+  modeTitle,
 }: GameScreenProps) {
   // --------------------------------------------------------------------------
   // 1. Estado Canônico da Engine (Fonte Única de Verdade Algorítmica)
   // --------------------------------------------------------------------------
   const [gameState, setGameState] = useState<BubbleSortState>(() =>
-    createBubbleSortState(initialArray)
+    createBubbleSortState(initialArray, { variant })
   );
 
   // --------------------------------------------------------------------------
@@ -76,7 +88,7 @@ export default function GameScreen({
     type: "info",
   }));
 
-  // Referências para temporizadores, guarda de chamada única e métricas
+  // Referências para temporizadores, guarda de chamada única, métricas e medição de tempo da fase
   const animTimeoutRef = useRef<number | null>(null);
   const hintTimeoutRef = useRef<number | null>(null);
   const completeTimeoutRef = useRef<number | null>(null);
@@ -84,6 +96,13 @@ export default function GameScreen({
   const isActionLockedRef = useRef<boolean>(false);
   const hintsUsedRef = useRef<number>(0);
   hintsUsedRef.current = sessionMetrics.hintsUsed;
+
+  // Medição de tempo monotônica (não punitiva e factual)
+  const getNow = () =>
+    typeof performance !== "undefined" && typeof performance.now === "function"
+      ? performance.now()
+      : Date.now();
+  const startTimeRef = useRef<number>(getNow());
 
   // --------------------------------------------------------------------------
   // 3. Dados Derivados Reativos da Engine
@@ -114,6 +133,14 @@ export default function GameScreen({
     (finalState: BubbleSortState) => {
       if (completedCalledRef.current) return;
       completedCalledRef.current = true;
+
+      const endTime = getNow();
+      const elapsedTimeMs = Math.max(0, Math.round(endTime - startTimeRef.current));
+      const score = calculateProtocolScore({
+        errors: finalState.errors,
+        hintsUsed: hintsUsedRef.current,
+      });
+
       onComplete({
         comparisons: finalState.comparisons,
         swaps: finalState.swaps,
@@ -122,6 +149,11 @@ export default function GameScreen({
         finalArray: [...finalState.currentValues],
         initialArray: [...finalState.initialValues],
         history: finalState.history,
+        score,
+        elapsedTimeMs,
+        variant: finalState.variant,
+        earlyExitTriggered: finalState.earlyExitTriggered,
+        terminationPass: finalState.terminationPass,
       });
     },
     [onComplete]
@@ -168,8 +200,11 @@ export default function GameScreen({
 
           if (result.state.completed) {
             isActionLockedRef.current = true;
+            const completionText = result.state.earlyExitTriggered
+              ? "Passada concluída sem trocas. O protocolo detectou que a esteira já está ordenada e encerrou a execução antecipadamente."
+              : "Protocolo concluído! Todas as caixas foram ordenadas com sucesso.";
             setMessage({
-              text: "Protocolo concluído! Todas as caixas foram ordenadas com sucesso.",
+              text: completionText,
               type: "success",
             });
             setIsAnimating(true);
@@ -203,8 +238,11 @@ export default function GameScreen({
 
         if (result.state.completed) {
           isActionLockedRef.current = true;
+          const completionText = result.state.earlyExitTriggered
+            ? "Passada concluída sem trocas. O protocolo detectou que a esteira já está ordenada e encerrou a execução antecipadamente."
+            : "Protocolo concluído! Todas as caixas foram ordenadas com sucesso.";
           setMessage({
-            text: "Protocolo concluído! Todas as caixas foram ordenadas com sucesso.",
+            text: completionText,
             type: "success",
           });
           setIsAnimating(true);
@@ -280,7 +318,8 @@ export default function GameScreen({
 
     completedCalledRef.current = false;
     isActionLockedRef.current = false;
-    const fresh = createBubbleSortState(initialArray);
+    startTimeRef.current = getNow();
+    const fresh = createBubbleSortState(initialArray, { variant });
     setGameState(fresh);
     hintsUsedRef.current = 0;
     setSessionMetrics(createPhaseSessionMetrics());
@@ -331,7 +370,12 @@ export default function GameScreen({
   return (
     <div className="relative w-full h-full overflow-hidden bg-[#060b1a] bg-grid scanlines flex flex-col">
       {/* Header */}
-      <PhaseHeader protocol="BUBBLE" phase={phase} totalPhases={3} />
+      {/* Header */}
+      <PhaseHeader
+        protocol={variant === "EARLY_EXIT" ? "BUBBLE (DESAFIO)" : "BUBBLE"}
+        phase={phase}
+        totalPhases={totalPhases}
+      />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 py-4 overflow-y-auto">
@@ -340,11 +384,18 @@ export default function GameScreen({
 
         {/* Phase & Pass / Comparison info */}
         <div className="relative z-10 text-center flex flex-col items-center gap-1">
+          {variant === "EARLY_EXIT" && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-amber-500/40 bg-amber-950/40 text-[10px] text-amber-300 font-mono tracking-widest uppercase">
+              ⚡ VARIANTE OTIMIZADA — EARLY EXIT
+            </div>
+          )}
           <h2
             className="text-2xl font-bold text-white/90 tracking-wider"
             style={{ fontFamily: "'Orbitron', sans-serif" }}
           >
-            PROTOCOLO BUBBLE — FASE {phase}
+            {variant === "EARLY_EXIT"
+              ? (modeTitle ?? `MODO DESAFIO — CENÁRIO ${phase}`)
+              : `PROTOCOLO BUBBLE — FASE ${phase}`}
           </h2>
 
           <div className="flex flex-wrap items-center justify-center gap-2 mt-1">

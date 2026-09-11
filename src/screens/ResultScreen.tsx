@@ -1,15 +1,27 @@
 import NumberedBox from "../components/NumberedBox";
 import GameButton from "../components/GameButton";
-import { BUBBLE_SORT_PSEUDOCODE } from "../game/replay/replayPseudocode";
+import type { BubbleSortVariant } from "../game/sorting";
+import {
+  BUBBLE_SORT_PSEUDOCODE,
+  BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE,
+} from "../game/replay/replayPseudocode";
+import { formatElapsedTime } from "../game/session";
 
 interface ResultScreenProps {
-  finalArray: number[];
+  finalArray: readonly number[];
   comparisons: number;
   swaps: number;
   errors: number;
   hintsUsed: number;
+  score?: number;
+  elapsedTimeMs?: number;
   phase: number;
   hasNextPhase?: boolean;
+  variant?: BubbleSortVariant;
+  earlyExitTriggered?: boolean;
+  terminationPass?: number;
+  canonicalComparisons?: number;
+  comparisonsAvoided?: number;
   onNext: () => void;
   onRepeat: () => void;
   onViewReplay?: () => void;
@@ -21,12 +33,26 @@ export default function ResultScreen({
   swaps,
   errors,
   hintsUsed,
+  score,
+  elapsedTimeMs,
   phase,
   hasNextPhase = true,
+  variant = "CANONICAL",
+  earlyExitTriggered = false,
+  terminationPass,
+  canonicalComparisons = 10,
+  comparisonsAvoided,
   onNext,
   onRepeat,
   onViewReplay,
 }: ResultScreenProps) {
+  const isEarlyExit = variant === "EARLY_EXIT";
+  const effectiveAvoided =
+    comparisonsAvoided ?? Math.max(0, canonicalComparisons - comparisons);
+  const pseudocodeLines = isEarlyExit
+    ? BUBBLE_SORT_EARLY_EXIT_PSEUDOCODE
+    : BUBBLE_SORT_PSEUDOCODE;
+
   return (
     <div className="relative w-full h-full min-h-full overflow-y-auto bg-[#060b1a] bg-grid scanlines flex flex-col items-center justify-start sm:justify-center p-4 sm:p-8">
       {/* Glow effects */}
@@ -48,7 +74,9 @@ export default function ResultScreen({
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-emerald-500/20 bg-emerald-950/20 mb-3">
               <span className="text-[10px] text-emerald-400 tracking-widest"
                 style={{ fontFamily: "'Space Mono', monospace" }}>
-                FASE {phase} CONCLUÍDA
+                {isEarlyExit
+                  ? `MODO DESAFIO — CENÁRIO ${phase} CONCLUÍDO`
+                  : `FASE ${phase} CONCLUÍDA`}
               </span>
             </div>
             <h2
@@ -58,11 +86,23 @@ export default function ResultScreen({
                 textShadow: "0 0 30px rgba(52,211,153,0.4)",
               }}
             >
-              ORDENAÇÃO
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-400">
-                CONCLUÍDA!
-              </span>
+              {isEarlyExit && earlyExitTriggered ? (
+                <>
+                  TÉRMINO
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-400">
+                    ANTECIPADO!
+                  </span>
+                </>
+              ) : (
+                <>
+                  ORDENAÇÃO
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-400">
+                    CONCLUÍDA!
+                  </span>
+                </>
+              )}
             </h2>
           </div>
         </div>
@@ -97,26 +137,92 @@ export default function ResultScreen({
         <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Stats */}
           <div className="panel-border bg-[#0d1635]/60 rounded-xl p-5 flex flex-col gap-4">
+            {/* Bloco de Destaque: PONTUAÇÃO DO PROTOCOLO */}
+            <div className="flex flex-col gap-1 pb-3 border-b border-white/10">
+              <span
+                className="text-[10px] text-cyan-400 font-mono tracking-widest uppercase"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                PONTUAÇÃO DO PROTOCOLO
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span
+                  className="text-3xl font-black text-cyan-300"
+                  style={{ fontFamily: "'Orbitron', sans-serif" }}
+                >
+                  {score ?? 100}
+                </span>
+                <span
+                  className="text-xs text-white/40"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  / 100
+                </span>
+              </div>
+              <span
+                className="text-[9px] text-white/40 leading-normal"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                Erros: -10 | Dicas: -5 | Otimizações e tempo não afetam a pontuação
+              </span>
+            </div>
+
             <span
               className="text-[10px] text-white/30 tracking-widest uppercase"
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
-              MÉTRICAS DA FASE
+              MÉTRICAS DA OPERAÇÃO
             </span>
 
             <div className="flex flex-col gap-3">
               {[
-                { label: "Comparações", value: comparisons, color: "text-cyan-300" },
-                { label: "Trocas", value: swaps, color: "text-purple-400" },
+                ...(isEarlyExit
+                  ? [
+                      {
+                        label: "Comparações Executadas",
+                        value: String(comparisons),
+                        color: "text-cyan-300",
+                      },
+                      {
+                        label: "Máximo Canônico (n(n-1)/2)",
+                        value: String(canonicalComparisons),
+                        color: "text-white/40",
+                      },
+                      {
+                        label: "Comparações Evitadas",
+                        value: String(effectiveAvoided),
+                        color: effectiveAvoided > 0 ? "text-emerald-300" : "text-white/40",
+                      },
+                      {
+                        label: "Early Exit Disparado",
+                        value: earlyExitTriggered
+                          ? `SIM (Passada ${terminationPass ?? 1})`
+                          : "NÃO",
+                        color: earlyExitTriggered ? "text-emerald-400" : "text-amber-400",
+                      },
+                    ]
+                  : [
+                      {
+                        label: "Comparações",
+                        value: String(comparisons),
+                        color: "text-cyan-300",
+                      },
+                    ]),
+                { label: "Trocas", value: String(swaps), color: "text-purple-400" },
                 {
                   label: "Decisões Incorretas",
-                  value: errors,
+                  value: String(errors),
                   color: errors > 0 ? "text-amber-400" : "text-white/60",
                 },
                 {
                   label: "Dicas Utilizadas",
-                  value: hintsUsed,
+                  value: String(hintsUsed),
                   color: hintsUsed > 0 ? "text-cyan-400" : "text-white/60",
+                },
+                {
+                  label: "Tempo de Operação",
+                  value: formatElapsedTime(elapsedTimeMs ?? 0),
+                  color: "text-emerald-300",
                 },
               ].map((stat) => (
                 <div key={stat.label} className="flex justify-between items-center">
@@ -135,6 +241,17 @@ export default function ResultScreen({
                 </div>
               ))}
             </div>
+
+            {isEarlyExit && (
+              <div className="mt-1 p-2.5 rounded-lg border border-cyan-500/20 bg-cyan-950/30 text-[10px] text-cyan-200/90 leading-relaxed font-mono">
+                <span className="font-bold text-cyan-300 uppercase block mb-1">
+                  Nota Pedagógica da Otimização:
+                </span>
+                {earlyExitTriggered
+                  ? "Passada concluída sem trocas. O protocolo detectou que a esteira já está ordenada e encerrou a execução antecipadamente."
+                  : "O elemento menor no final exigiu trocas em todas as passadas. O Early Exit não trouxe economia neste cenário (pior caso)."}
+              </div>
+            )}
           </div>
 
           {/* Pseudocode */}
@@ -143,14 +260,18 @@ export default function ResultScreen({
               className="text-[10px] text-white/30 tracking-widest uppercase"
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
-              PSEUDOCÓDIGO — BUBBLE SORT
+              {isEarlyExit
+                ? "PSEUDOCÓDIGO — EARLY EXIT"
+                : "PSEUDOCÓDIGO — BUBBLE SORT"}
             </span>
             <div className="flex flex-col gap-0.5">
-              {BUBBLE_SORT_PSEUDOCODE.map((item) => (
+              {pseudocodeLines.map((item) => (
                 <div
                   key={item.id}
                   className={`px-2 py-0.5 rounded text-[10px] leading-relaxed ${
-                    item.id === "SWAP_STATEMENT" ? "bg-cyan-950/40 text-cyan-300" : "text-white/40"
+                    item.id === "SWAP_STATEMENT" || item.id === "BREAK_STATEMENT"
+                      ? "bg-cyan-950/40 text-cyan-300"
+                      : "text-white/40"
                   }`}
                   style={{
                     fontFamily: "'Space Mono', monospace",
@@ -172,10 +293,16 @@ export default function ResultScreen({
             </GameButton>
           )}
           <GameButton onClick={onRepeat} variant="secondary" size="md">
-            ↺ REPETIR FASE
+            {isEarlyExit ? "↺ REPETIR CENÁRIO" : "↺ REPETIR FASE"}
           </GameButton>
           <GameButton onClick={onNext} variant="primary" size="lg">
-            {hasNextPhase ? "PRÓXIMA FASE →" : "CONCLUIR PROTOCOLO →"}
+            {hasNextPhase
+              ? isEarlyExit
+                ? "PRÓXIMO CENÁRIO →"
+                : "PRÓXIMA FASE →"
+              : isEarlyExit
+                ? "CONCLUIR DESAFIOS →"
+                : "CONCLUIR PROTOCOLO →"}
           </GameButton>
         </div>
       </div>

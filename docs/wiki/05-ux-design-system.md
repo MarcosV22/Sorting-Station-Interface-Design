@@ -168,6 +168,20 @@ Fundo card blue           Fundo âmbar translúcido   Fundo esmeralda translúci
 
 ---
 
+### 5.4. `ProtocolModeBriefingScreen` e Sistema de Briefings Orientados a Dados ([`src/screens/ProtocolModeBriefingScreen.tsx`](../../src/screens/ProtocolModeBriefingScreen.tsx))
+
+A tela de briefing intermediária (P1.10 / ADR 0010) ancora a preparação mental do operador antes da esteira de ordenação. O componente foi desenhado para baixo esforço cognitivo e alta legibilidade:
+
+1. **Pílula Superior de Status:** Crachá temático em fonte `Space Mono` com ponto luminoso pulsante (`animate-pulse`) indicando a unidade operacional e a variante em execução (`cyan`, `amber`, `emerald` ou `purple`);
+2. **Hierarquia Tipográfica Imersiva:** Título em gradiente luminoso com sombra difusa (`Orbitron`), acompanhado do protocolo genérico e subtítulo explicativo (`Exo 2`);
+3. **Cartão de Objetivo Operacional:** Painel translúcido (`bg-[#0d1635]/90 border border-[#2a4a9e]/60`) resumindo em 1 a 2 frases a meta algorítmica principal;
+4. **Procedimento na Esteira (Grid 2x2):** Quatro cartões com cantos arredondados contendo ícone monoespacial estilizado, título de ação e descrição operacional concisa;
+5. **Particularidades do Modo:** Painel destacado para regras teóricas fundamentais (ex.: término em passadas com zero trocas, neutralidade de score);
+6. **Destaques de Telemetria:** Três cartões compactos de métricas com valores em destaque (`Orbitron`);
+7. **Barra de Ação Inferior:** Botão de cancelamento/retorno seguro `[ ← VOLTAR ]` (sem efeitos colaterais na semente ou no storage) e botão principal de disparo `[ ▶ ${startLabel} ]` com foco visível acessível (`focus-visible:ring-2 focus-visible:ring-cyan-400`).
+
+---
+
 ## 6. Princípios Futuros de UX e Design de Interação
 
 Para orientar a evolução das próximas telas e novos algoritmos, as decisões de design devem obrigatoriamente respeitar os seguintes princípios:

@@ -381,6 +381,59 @@ Indices:         0   1   2   3
 
 ---
 
+## 6. Variantes do Bubble Sort: Didático (CANONICAL) vs Modo Desafio (EARLY_EXIT) `[IMPLEMENTADO - P1.8]`
+
+No marco P1.8, o **Sorting Station** introduziu suporte a duas variantes formais do Bubble Sort executadas pelo mesmo motor unificado (`src/game/sorting/bubbleSortEngine.ts`), preservando retrocompatibilidade total:
+
+### 6.1. Contrato de Tipagem
+```typescript
+export type BubbleSortVariant = "CANONICAL" | "EARLY_EXIT";
+
+export interface BubbleSortOptions {
+  readonly variant?: BubbleSortVariant;
+}
+```
+- **`CANONICAL` (Padrão):** Modo didático da campanha principal. Executa invariavelmente todas as $n(n-1)/2$ comparações teóricas. O campo `earlyExitTriggered` permanece invariavelmente `false`.
+- **`EARLY_EXIT` (Modo Desafio):** Variante otimizada. Avalia `swapsInCurrentPass === 0` no encerramento de cada passada completa. Se nenhuma troca ocorreu, ativa o término antecipado.
+
+### 6.2. Condição Formal de Interrupção Antecipada
+Na função pura `executeBubbleSortStep`:
+```typescript
+const isEndOfPass = nextComparisonIndex >= currentValues.length - 1 - currentPassIndex;
+const isEarlyExitConditionMet =
+  isEndOfPass && state.variant === "EARLY_EXIT" && newSwapsInPass === 0;
+```
+Quando satisfeita:
+- `completed: true` e `status: "COMPLETED"`;
+- `earlyExitTriggered: true`;
+- `terminationPass: state.passIndex + 1`;
+- `sortedBoundary: 0` (todos os elementos consolidados como ordenados);
+- Nenhuma passada futura é executada e `history` mantém apenas comparações reais (zero passos fantasmas).
+
+### 6.3. Cenários Canônicos do Modo Desafio
+Definidos em `src/game/sorting/challengeScenarios.ts`:
+1. **Cenário 1 — Vetor Já Ordenado (`[12, 25, 47, 63, 88]`):**
+   - Executa 4 comparações na Passada 1 (0 trocas) $\rightarrow$ Early Exit imediato!
+   - Economia: 6 comparações evitadas em relação ao limite canônico de 10 (60% de redução).
+2. **Cenário 2 — Quase Ordenado (`[15, 8, 23, 42, 60]`):**
+   - Passada 1 (4 comps, 1 swap) $\rightarrow$ Passada 2 (3 comps, 0 swaps) $\rightarrow$ Early Exit após 7 comparações.
+   - Economia: 3 comparações evitadas em relação ao limite canônico de 10 (30% de redução).
+3. **Cenário 3 — Pior Caso para a Otimização (`[30, 45, 60, 75, 10]`):**
+   - Inversão na cauda ("elemento tartaruga" que avança apenas 1 posição à esquerda por passada).
+   - Executa todas as 10 comparações canônicas sem acionar Early Exit. Demonstra pedagogicamente que vetores desfavoráveis não obtêm ganho com a flag de troca.
+
+---
+
+## 4. Integração com a Geração Procedural de Vetores (`src/game/generation/`)
+
+Conforme estabelecido no **ADR 0009**, o motor de ordenação é rigorosamente desacoplado da criação de vetores:
+1. **Agnosticismo Total:** `src/game/generation/` não importa `BubbleSortEngine` nem qualquer arquivo de ordenação. O motor apenas consome o array resultante (`readonly number[]`).
+2. **Determinismo:** Dada uma mesma semente e configuração de constraints (`BUBBLE_CAMPAIGN_CONSTRAINTS`), o gerador produz deterministicamente a mesma entrada para o algoritmo.
+3. **Imutabilidade:** O vetor de entrada é congelado (`Object.freeze`), assegurando que nem a engine nem as telas possam mutá-lo indevidamente.
+4. **Replay:** O modo de reprodução consome estritamente o `initialArray` e o `history: readonly StepRecord[]` gerados durante a partida, sem jamais reexecutar o PRNG ou regenerar vetores via seed.
+
+---
+
 # PARTE C — EXPANSÃO PARA NOVOS ALGORITMOS
 
 > [!IMPORTANT]

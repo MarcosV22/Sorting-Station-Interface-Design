@@ -9,28 +9,22 @@
 
 ## 1. Estado Real dos Testes Automatizados Atuais
 
-Com as conclusões dos marcos **P0.2**, **P0.8**, **P1.1** e **P1.2**, a infraestrutura de testes automatizados do projeto cobre 100% da lógica pura de domínio, tutorial, agregação de campanha e telemetria pedagógica de sessão:
+Com as conclusões dos marcos **P0.2**, **P0.8**, **P1.1**, **P1.2**, **P1.3**, **P1.4** e **P1.6**, a infraestrutura de testes automatizados do projeto cobre 100% da lógica pura de domínio, tutorial, agregação de campanha, telemetria de sessão, replay da execução, pseudocódigo sincronizado e persistência local desacoplada:
 
 - **Framework de Testes Implementado:** **Vitest** (`vitest ^5.0.0`) instalado como dependência de desenvolvimento canônica via `pnpm add -D vitest`.
-- **Arquivos de Teste Ativos (5 arquivos, 54 testes automatizados aprovados):**
+- **Arquivos de Teste Ativos (7 arquivos, 86 testes automatizados aprovados 100% verde):**
   1. [`src/game/sorting/bubbleSortEngine.test.ts`](../../src/game/sorting/bubbleSortEngine.test.ts) (**31 testes unitários**): Cobre inicialização, invariantes algorítmicas, validação estrita de passos do usuário (`SWAP`/`KEEP`), estabilidade com duplicatas, histórico e cálculo de progresso real;
   2. [`src/game/campaign/campaignSummary.test.ts`](../../src/game/campaign/campaignSummary.test.ts) (**4 testes unitários**): Cobre agregação pura em memória das métricas factuais da campanha (fases concluídas, comparações totais, trocas totais, erros totais e dicas totais);
   3. [`src/game/tutorial/tutorialGuide.test.ts`](../../src/game/tutorial/tutorialGuide.test.ts) (**5 testes unitários**): Cobre a máquina de estados pedagógica do tutorial interativo `[3, 1, 2]` e mensagens formativas;
   4. [`src/game/session/sessionMetrics.test.ts`](../../src/game/session/sessionMetrics.test.ts) (**5 testes unitários**): Cobre o registro imutável de dicas (`hintsUsed`), inicialização e reinício de sessão desacoplados da engine (ADR 0003);
-  5. [`src/game/replay/replayModel.test.ts`](../../src/game/replay/replayModel.test.ts) (**9 testes unitários**): Cobre a derivação pura de quadros de replay, quadro inicial (Quadro 0), último quadro ordenado, identificação de SWAP e KEEP, ordenação sequencial estrita, imutabilidade em runtime e recuperação segura via clamping (ADR 0004).
+  5. [`src/game/replay/replayModel.test.ts`](../../src/game/replay/replayModel.test.ts) (**9 testes unitários**): Cobre a derivação pura de quadros de replay, quadro inicial (Quadro 0), último quadro ordenado, identificação de SWAP e KEEP, ordenação sequencial estrita, imutabilidade em runtime e recuperação segura via clamping (ADR 0004);
+  6. [`src/game/replay/replayPseudocode.test.ts`](../../src/game/replay/replayPseudocode.test.ts) (**9 testes unitários**): Cobre o modelo canônico de 9 instruções, mapeamentos `INITIAL`, `KEEP` e `SWAP`, formatação de comparações concretas, identificação estrita da linha de troca, determinismo e imutabilidade (ADR 0005);
+  7. [`src/game/persistence/persistence.test.ts`](../../src/game/persistence/persistence.test.ts) (**23 testes unitários**): Cobre estado padrão sem save, save/load idempotente, progressão até o teto `PHASES.length`, não-regressão ao rejogar fases anteriores, conclusão de tutorial, resiliência contra JSON corrompido, schemas com versões inválidas ou futuras, clamping numérico de fases, tolerância a exceções de storage (`SecurityError` e `QuotaExceededError`), imutabilidade profunda com `Object.freeze` e isolamento entre variáveis voláteis de sessão e progresso persistido (ADR 0006).
 - **Scripts de Teste Canônicos em [`package.json`](../../package.json):**
   - `pnpm run test:run` (ou `npm run test:run`): Execução única headless da suíte completa;
   - `pnpm test` (ou `npm test`): Modo watch interativo de desenvolvimento.
-- **Escopo Coberto Efetivamente:**
-  - **100% das Camadas de Domínio e Lógica Pura (63 testes automatizados em 6 arquivos):**
-    1. *Bubble Sort Engine:* 31 testes garantindo integridade matemática formal;
-    2. *Agregação da Campanha:* 4 testes validando métricas factuais globais;
-    3. *Tutorial Interativo:* 5 testes validando scaffolding didático;
-    4. *Métricas de Sessão:* 5 testes validando imutabilidade e contagem rigorosa de dicas sem poluir a engine;
-    5. *Camada Pura de Replay:* 9 testes validando transformação e integridade determinística dos quadros de reprodução;
-    6. *Sincronização de Pseudocódigo (P1.4):* 9 testes em `replayPseudocode.test.ts` validando o modelo canônico de 9 instruções, mapeamentos `INITIAL`, `KEEP` e `SWAP`, formatação de comparações concretas, identificação estrita da linha de troca, determinismo e imutabilidade (`Object.freeze`).
 - **O que ainda NÃO possui testes automatizados:**
-  - Testes de renderização de componentes React e acessibilidade (ARIA/teclado).
+  - Testes de renderização de componentes React e testes de ponta a ponta (E2E) em navegador real.
 
 ---
 
@@ -42,7 +36,7 @@ A Pirâmide de Qualidade do Sorting Station agora possui seus dois primeiros ní
 graph TD
     subgraph Piramide_Qualidade ["Pirâmide de Garantia da Qualidade"]
         N1["Nível 1: Checagem Estática & Tipagem\n(tsc, vite build, oxfmt) [ATIVO HOJE]"]
-        N2["Nível 2: Testes Unitários de Domínio da Engine\n(Vitest: 28 testes em bubbleSortEngine.test.ts) [ATIVO HOJE]"]
+        N2["Nível 2: Testes Unitários de Domínio & Persistência\n(Vitest: 106 testes em 8 arquivos) [ATIVO HOJE]"]
         N3["Nível 3: Testes de Integração de FSM & Telas\n(Transições de estado, callbacks, fluxos) [PLANEJADO]"]
         N4["Nível 4: Acessibilidade, Responsividade & E2E\n(Teclado, reduced-motion, telas) [PLANEJADO]"]
 
@@ -54,7 +48,15 @@ graph TD
 
 > [!NOTE]
 > **Tooling de Teste Ativo:**  
-> O **Vitest** é o executor oficial de testes do projeto. Para os testes de componentes React dos Níveis 3 e 4, a introdução de bibliotecas como `@testing-library/react` permanece catalogada para quando o front-end for formalmente coberto.
+> O **Vitest** é o executor oficial de testes do projeto, com **106 testes automatizados 100% verdes** distribuídos em:
+> - `bubbleSortEngine.test.ts` (28 testes)
+> - `bubbleSortFsm.test.ts` (3 testes)
+> - `campaignSummary.test.ts` (3 testes)
+> - `sessionMetrics.test.ts` (11 testes)
+> - `replayModel.test.ts` (9 testes)
+> - `replayPseudocode.test.ts` (9 testes)
+> - `protocolScore.test.ts` (11 testes — P1.7)
+> - `persistence.test.ts` (32 testes — P1.6 e P1.7)
 
 ---
 
