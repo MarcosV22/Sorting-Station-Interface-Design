@@ -128,9 +128,74 @@ export const BUBBLE_EARLY_EXIT_BRIEFING: ProtocolModeBriefing = {
   startVariant: "primary",
 };
 
+/**
+ * Briefing oficial para o protocolo Selection Sort ("Scanner de Carga Mínima").
+ * Foco na separação conceitual entre varredura sem trocas e transferência única pontual.
+ */
+export const SELECTION_CANONICAL_BRIEFING: ProtocolModeBriefing = {
+  id: "selection-canonical",
+  protocolName: "PROTOCOLO: SELECTION SORT",
+  modeName: "SCANNER DE CARGA MÍNIMA",
+  badgeText: "CENTRAL LOGÍSTICA • NOVO PROTOCOLO",
+  badgeVariant: "purple",
+  subtitle: "Varredura seletiva para identificação da menor carga e consolidação na posição alvo.",
+  objective:
+    "Escanear a partição não ordenada, registrar o menor elemento e transferi-lo em definitivo para a posição alvo da passada.",
+  instructions: [
+    {
+      icon: "🎯",
+      title: "Posição Alvo",
+      description:
+        "Em cada passada, a posição inicial da partição não ordenada aguarda a menor carga remanescente.",
+    },
+    {
+      icon: "🔍",
+      title: "Varredura do Scanner",
+      description:
+        "O sensor percorre toda a região não ordenada comparando cada caixa com o candidato mínimo atual.",
+    },
+    {
+      icon: "✦",
+      title: "Decisão do Candidato",
+      description:
+        "NOVO MÍNIMO atualiza o candidato se a carga for menor; MANTER CANDIDATO preserva o atual. Nenhuma troca ocorre na varredura.",
+    },
+    {
+      icon: "⇄",
+      title: "Transferência e Selo OK",
+      description:
+        "Ao término da varredura, ocorre no máximo uma transferência para posicionar o menor item e consolidar a posição com selo OK.",
+    },
+  ],
+  highlights: [
+    {
+      label: "MÉTODO",
+      value: "Scanner Seletivo",
+      variant: "purple",
+    },
+    {
+      label: "COMPARAÇÕES",
+      value: "n(n-1)/2 Formais",
+      variant: "cyan",
+    },
+    {
+      label: "TROCAS",
+      value: "No Máximo n-1",
+      variant: "emerald",
+    },
+  ],
+  particularities: [
+    "Durante toda a varredura do scanner, nenhuma movimentação física de caixas ocorre na esteira.",
+    "A transferência ocorre somente após a varredura completa, selando a posição alvo com o selo OK.",
+  ],
+  startLabel: "INICIAR SELECTION SORT",
+  startVariant: "primary",
+};
+
 export const BRIEFING_CATALOG: Record<BriefingModeId, ProtocolModeBriefing> = {
   "bubble-canonical": BUBBLE_CANONICAL_BRIEFING,
   "bubble-early-exit": BUBBLE_EARLY_EXIT_BRIEFING,
+  "selection-canonical": SELECTION_CANONICAL_BRIEFING,
 };
 
 /**

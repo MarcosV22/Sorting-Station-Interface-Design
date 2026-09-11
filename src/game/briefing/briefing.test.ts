@@ -170,4 +170,46 @@ describe("Protocol Mode Briefing System (src/game/briefing/)", () => {
       expect(screen).toBe("home");
     });
   });
+
+  describe("SELECTION_CANONICAL_BRIEFING (P2.1-C)", () => {
+    it("deve conter campos fundamentais e metadados obrigatórios do Selection Sort", () => {
+      const briefing = getBriefingForMode("selection-canonical");
+      expect(briefing.id).toBe("selection-canonical");
+      expect(briefing.protocolName).toContain("SELECTION SORT");
+      expect(briefing.modeName).toBe("SCANNER DE CARGA MÍNIMA");
+      expect(briefing.startLabel).toBe("INICIAR SELECTION SORT");
+      expect(briefing.instructions.length).toBeGreaterThanOrEqual(4);
+      expect(briefing.highlights.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("deve conter conceitos fundamentais: scanner, candidato mínimo, posição alvo, transferência", () => {
+      const briefing = getBriefingForMode("selection-canonical");
+      const allText = [
+        briefing.subtitle,
+        briefing.objective,
+        ...briefing.instructions.map((i) => `${i.title} ${i.description}`),
+        ...(briefing.particularities ?? []),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      expect(allText).toMatch(/scanner|sensor/);
+      expect(allText).toMatch(/mínimo|candidato/);
+      expect(allText).toMatch(/alvo/);
+      expect(allText).toMatch(/transferência|transferir/);
+      expect(allText).toMatch(/nenhuma troca ocorre|sem movimentação/);
+    });
+
+    it("não deve misturar conteúdo nem mecânicas de vizinhos adjacentes do Bubble Sort", () => {
+      const briefing = getBriefingForMode("selection-canonical");
+      const allText = JSON.stringify(briefing).toLowerCase();
+      expect(allText).not.toContain("pares vizinhos");
+      expect(allText).not.toContain("early exit");
+    });
+
+    it("deve estar registrado no catálogo global de briefings", () => {
+      expect(Object.keys(BRIEFING_CATALOG)).toContain("selection-canonical");
+      expect(getBriefingForMode("selection-canonical").id).toBe("selection-canonical");
+    });
+  });
 });

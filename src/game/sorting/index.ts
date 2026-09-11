@@ -5,3 +5,4 @@
 export * from "./types"
 export * from "./bubbleSortEngine"
 export * from "./challengeScenarios"
+export * from "./selection"

@@ -27,7 +27,9 @@ flowchart TD
 
     subgraph StateRouter ["2. Máquina de Telas (useState<Screen>)"]
         App -- "screen === 'home'" --> HomeScreen["src/screens/HomeScreen.tsx"]
+        App -- "screen === 'briefing'" --> BriefingScreen["src/screens/ProtocolModeBriefingScreen.tsx"]
         App -- "screen === 'tutorial'" --> TutorialScreen["src/screens/TutorialScreen.tsx"]
+        App -- "screen === 'selection-tutorial'" --> SelectionTutorialScreen["src/screens/SelectionTutorialScreen.tsx"]
         App -- "screen === 'game'" --> GameScreen["src/screens/GameScreen.tsx"]
         App -- "screen === 'result'" --> ResultScreen["src/screens/ResultScreen.tsx"]
         App -- "screen === 'replay'" --> ReplayScreen["src/screens/ReplayScreen.tsx"]
@@ -36,8 +38,15 @@ flowchart TD
 
     subgraph ScreenEvents ["3. Ações e Callbacks de Transição"]
         HomeScreen -- "onStart() / onHowToPlay()" --> AppTutorial["setScreen('tutorial')"]
-        TutorialScreen -- "onBack()" --> AppHome["setScreen('home')"]
-        TutorialScreen -- "onUnderstood()" --> AppGame["setScreen('game')"]
+        HomeScreen -- "onStartChallenge()" --> AppBriefingChallenge["setBriefingModeId('bubble-early-exit')\nsetScreen('briefing')"]
+        HomeScreen -- "onStartSelection()" --> AppBriefingSelection["setBriefingModeId('selection-canonical')\nsetScreen('briefing')"]
+        BriefingScreen -- "onStart() [bubble-canonical]" --> AppGame["setScreen('game')"]
+        BriefingScreen -- "onStart() [bubble-early-exit]" --> AppGameEarly["setScreen('game')"]
+        BriefingScreen -- "onStart() [selection-canonical]" --> AppSelectionTut["setScreen('selection-tutorial')"]
+        BriefingScreen -- "onBack()" --> AppHome["setScreen('home')"]
+        SelectionTutorialScreen -- "onComplete() / onBack()" --> AppHome2["setScreen('home')"]
+        TutorialScreen -- "onBack()" --> AppHome
+        TutorialScreen -- "onUnderstood()" --> AppGame
         
         GameScreen -- "onComplete(comparisons, swaps, finalArray, ...)" --> AppResult["setResult({...})\nsetScreen('result')"]
         ResultScreen -- "onRepeat()" --> AppRepeat["setResult(null)\nsetScreen('game')"]
@@ -54,7 +63,10 @@ flowchart TD
         GameScreen --> GameButton["GameButton.tsx (Dica / Reiniciar)"]
         
         HomeScreen --> GameButton
+        BriefingScreen --> GameButton
         TutorialScreen --> GameButton
+        SelectionTutorialScreen --> NumberedBox
+        SelectionTutorialScreen --> GameButton
         ResultScreen --> GameButton
         ResultScreen --> NumberedBox
         ReplayScreen --> NumberedBox
@@ -82,7 +94,8 @@ O ciclo de inicialização da aplicação é direto e enxuto:
    - Inicializa as variáveis fundamentais de estado através de `useState`:
      - `screen`: `"home"` ([`src/App.tsx`](../../src/App.tsx));
      - `phase`: `1` ([`src/App.tsx`](../../src/App.tsx));
-     - `result`: `null` ([`src/App.tsx`](../../src/App.tsx)).
+     - `result`: `null` ([`src/App.tsx`](../../src/App.tsx));
+     - `briefingModeId`: `"bubble-canonical"` ([`src/App.tsx`](../../src/App.tsx)).
 
 ---
 
@@ -94,7 +107,9 @@ A navegação da aplicação **não utiliza rotas de URL**. Ela funciona como um
 // src/App.tsx
 type Screen =
   | "home"
+  | "briefing"
   | "tutorial"
+  | "selection-tutorial"
   | "game"
   | "result"
   | "replay"
@@ -105,17 +120,23 @@ type Screen =
 
 | Tela de Origem | Ação / Callback | Novo Estado de `screen` | Efeito Colateral |
 | :--- | :--- | :--- | :--- |
-| `HomeScreen` | `onStart` | `"tutorial"` | Direciona o jogador para a explicação inicial ([`src/App.tsx`](../../src/App.tsx)) |
-| `HomeScreen` | `onHowToPlay` | `"tutorial"` | Direciona o jogador para a mesma explicação ([`src/App.tsx`](../../src/App.tsx)) |
+| `HomeScreen` | `onStart` | `"briefing"` | Prepara briefing do modo canônico (`briefingModeId = 'bubble-canonical'`) |
+| `HomeScreen` | `onHowToPlay` | `"tutorial"` | Direciona o jogador para a explicação animada do Bubble Sort |
+| `HomeScreen` | `onStartChallenge` | `"briefing"` | Prepara briefing do Modo Desafio Early Exit (`briefingModeId = 'bubble-early-exit'`) |
+| `HomeScreen` | `onStartSelection` | `"briefing"` | Prepara briefing do Selection Sort (`briefingModeId = 'selection-canonical'`) |
+| `ProtocolModeBriefingScreen` | `onStart` (Bubble) | `"game"` | Dispara geração procedural da fase 1 e inicia o jogo |
+| `ProtocolModeBriefingScreen` | `onStart` (Selection) | `"selection-tutorial"` | Inicia o tutorial interativo do Selection Sort |
+| `ProtocolModeBriefingScreen` | `onBack` | `"home"` | Retorna à home sem efeitos colaterais |
+| `SelectionTutorialScreen` | `onBack` / `onComplete` | `"home"` | Retorna à home com segurança |
 | `TutorialScreen` | `onBack` | `"home"` | Retorna para a tela inicial ([`src/App.tsx`](../../src/App.tsx)) |
 | `TutorialScreen` | `onUnderstood` | `"game"` | Inicia o jogo na fase atual ([`src/App.tsx`](../../src/App.tsx)) |
-| `GameScreen` | `onComplete` | `"result"` | Armazena `{ comparisons, swaps, errors, hintsUsed, finalArray, initialArray, history, seed }` em `result` e consolida em `phaseResults` ([`src/App.tsx`](../../src/App.tsx)) |
-| `ResultScreen` | `onViewReplay` | `"replay"` | Transita para `ReplayScreen` preservando métricas e histórico da fase em memória ([`src/App.tsx`](../../src/App.tsx), ADR 0004) |
-| `ReplayScreen` | `onBackToResult` | `"result"` | Retorna para `ResultScreen` sem perdas ou mutações em `result` ou `phaseResults` ([`src/App.tsx`](../../src/App.tsx)) |
-| `ResultScreen` | `onRepeat` | `"game"` | Define `result = null`, reiniciando a fase com o **MESMO vetor** e **MESMA semente** ([`src/App.tsx`](../../src/App.tsx), ADR 0009) |
-| `ResultScreen` | `onNext` | `"game"` ou `"campaign-complete"` | Se `phase < TOTAL_PHASES`, gera nova semente e novo vetor procedural com `generateBubblePhaseArray(phase + 1)`; se na fase final, transita para `"campaign-complete"` ([`src/App.tsx`](../../src/App.tsx), ADR 0002 e ADR 0009) |
-| `CampaignCompleteScreen` | `onReturnHome` | `"home"` | Limpa `phaseResults`, reseta `phase = 1` e retorna à tela inicial ([`src/App.tsx`](../../src/App.tsx)) |
-| `CampaignCompleteScreen` | `onRestartProtocol` | `"game"` | Limpa `phaseResults`, gera novo vetor procedural para a Fase 1 (`generateBubblePhaseArray(1)`), reseta `phase = 1` e inicia novo ciclo ([`src/App.tsx`](../../src/App.tsx), ADR 0009) |
+| `GameScreen` | `onComplete` | `"result"` | Armazena métricas factuais em `result` e consolida em `phaseResults` |
+| `ResultScreen` | `onViewReplay` | `"replay"` | Transita para `ReplayScreen` preservando histórico em memória |
+| `ReplayScreen` | `onBackToResult` | `"result"` | Retorna para `ResultScreen` sem perdas |
+| `ResultScreen` | `onRepeat` | `"game"` | Reinicia com mesmo vetor e semente |
+| `ResultScreen` | `onNext` | `"game"` ou `"campaign-complete"` | Avança de fase ou encerra campanha |
+| `CampaignCompleteScreen` | `onReturnHome` | `"home"` | Reseta sessão e retorna à home |
+| `CampaignCompleteScreen` | `onRestartProtocol` | `"game"` | Reinicia nova campanha |
 
 ---
 

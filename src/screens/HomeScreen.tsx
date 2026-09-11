@@ -5,6 +5,7 @@ interface HomeScreenProps {
   onHowToPlay: () => void;
   isChallengeUnlocked?: boolean;
   onStartChallenge?: () => void;
+  onStartSelection?: () => void;
 }
 
 function ConveyorBelt({ y, speed }: { y: number; speed: number }) {
@@ -42,6 +43,7 @@ export default function HomeScreen({
   onHowToPlay,
   isChallengeUnlocked = false,
   onStartChallenge,
+  onStartSelection,
 }: HomeScreenProps) {
   return (
     <div className="relative w-full h-full min-h-full overflow-y-auto bg-[#060b1a] bg-grid scanlines flex flex-col items-center justify-start sm:justify-center py-8">
@@ -132,6 +134,17 @@ export default function HomeScreen({
             </GameButton>
           )}
 
+          {onStartSelection && (
+            <GameButton
+              onClick={onStartSelection}
+              variant="secondary"
+              size="md"
+              className="w-full border-purple-500/50 text-purple-300 hover:border-purple-400 shadow-lg shadow-purple-950/30"
+            >
+              🔍 &nbsp; SELECTION SORT (PREVIEW)
+            </GameButton>
+          )}
+
           <GameButton onClick={onHowToPlay} variant="secondary" size="md" className="w-full">
             ? &nbsp; COMO JOGAR
           </GameButton>
@@ -148,10 +161,16 @@ export default function HomeScreen({
           {["BUBBLE SORT", "INSERTION SORT", "SELECTION SORT"].map((algo, i) => (
             <span
               key={algo}
-              className={`text-[10px] tracking-widest ${i === 0 ? "text-cyan-400" : "text-white/20"}`}
+              className={`text-[10px] tracking-widest ${
+                i === 0
+                  ? "text-cyan-400"
+                  : i === 2
+                    ? "text-purple-400"
+                    : "text-white/20"
+              }`}
               style={{ fontFamily: "'Space Mono', monospace" }}
             >
-              {i === 0 ? "◉" : "○"} {algo}
+              {i === 0 ? "◉" : i === 2 ? "◈" : "○"} {algo}
             </span>
           ))}
         </div>

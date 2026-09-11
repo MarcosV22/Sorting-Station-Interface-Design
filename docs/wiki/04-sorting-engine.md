@@ -443,17 +443,48 @@ Conforme estabelecido no **ADR 0009**, o motor de ordenação é rigorosamente d
 
 ---
 
-## 1. Selection Sort (Protocolo Selection) `[PLANEJADO - P2]`
+## 1. Selection Sort (Protocolo Selection): Domínio Puro, Constraints e Tutorial `[NÚCLEO P2.1-B; PEDAGOGIA P2.1-C IMPLEMENTADOS; CAMPANHA P2.1-D PLANEJADA]`
 
 ### 1.1. Fundamento Algorítmico e Pedagógico
-O Selection Sort opera dividindo o vetor em duas partições: uma **sublista já ordenada** à esquerda e uma **sublista não ordenada** à direita. Em cada passada, o algoritmo varre toda a partição não ordenada para localizar o menor elemento (*minimum element*) e, ao final da varredura, realiza **uma única troca pontual** com o primeiro elemento da partição não ordenada.
+O Selection Sort opera dividindo o vetor em duas partições: uma **sublista já ordenada** à esquerda ($0 \dots i-1$) e uma **sublista não ordenada** à direita ($i \dots n-1$). Em cada passada $i$, o algoritmo varre toda a partição não ordenada ($j = i+1 \dots n-1$) para localizar o menor elemento (*minimum element* no índice `minIndex`) e, ao final da varredura, realiza **no máximo uma única troca pontual** com o primeiro elemento da partição não ordenada ($A[i] \leftrightarrow A[minIndex]$). Caso o menor elemento já esteja na posição $i$ (`minIndex === i`), nenhuma troca física é realizada ($swaps$ permanece inalterado).
 
-### 1.2. Mecânica de Gameplay Dedicada
-- **Metáfora Diegética:** *"Scanner de Carga Mínima"*.
-- **Sem Trocas Adjacentes:** O jogador **não** troca vizinhos como no Bubble Sort.
-- **Interação do Scanner:** O jogador desliza um sensor de escaneamento sobre a partição não ordenada. Ao identificar um valor menor que o mínimo temporário, ele deve atualizar o ponteiro `currentMinIndex`.
-- **Ação de Selamento:** Ao atingir o final da esteira não ordenada, um botão especial *"TRANSFERIR MENOR CARGA"* é ativado, disparando a troca de longa distância entre o índice mínimo encontrado e a fronteira da partição não ordenada.
-- **Visualização de Partição:** Uma barreira laser translúcida na esteira delimita com precisão a fronteira entre as caixas já consolidadas e as caixas sob escaneamento.
+### 1.2. Arquitetura da Engine Pura (`src/game/sorting/selection/`) — P2.1-B / ADR 0011
+A engine é puramente funcional, imutável e desacoplada de React, DOM, estilos e persistência:
+- **`types.ts`:** Define `SelectionSortState`, `SelectionPhase` (`"INSPECT" | "COMMIT" | "COMPLETED"`), `SelectionStatus`, `SelectionInspectionDecision` (`"SELECT_NEW_MIN" | "KEEP_MIN"`), `SelectionStepRecord` (união discriminada de `INSPECTION` e `COMMIT`), `ExpectedSelectionInspection`, `ExpectedSelectionCommit`, etc.;
+- **`selectionSortEngine.ts`:** Implementa a FSM determinística com funções puras:
+  - `createSelectionSortState(values)`: inicializa o estado imutável congelado (`Object.freeze`), tratando arrays vazios ou unitários com término seguro imediato;
+  - `executeSelectionInspection(state, decision)`: processa decisões de varredura. Valida o critério estrito $A[j] < A[minIndex]$. Em decisões incorretas, penaliza `errors += 1` sem avançar $j$, sem alterar $minIndex$, sem alterar o vetor e sem registrar no histórico algorítmico;
+  - `commitSelectionPass(state)`: executa a consolidação procedimental da passada. Se $minIndex \neq i$, permuta fisicamente os valores e incrementa $swaps$; se $minIndex === i$, consolida sem troca física. Atualiza `sortedBoundary` e avança para a próxima passada ou conclui o algoritmo;
+  - Bloqueio mútuo: impede chamadas de inspeção durante `COMMIT` e de commit durante `INSPECT`;
+- **`index.ts`:** Ponto de entrada e reexportação pública do módulo;
+- **`selectionSortEngine.test.ts`:** Suíte com 18 testes automatizados no Vitest cobrindo vetores vazios, unitários, 2 elementos, exemplo canônico `[4, 1, 3]`, duplicados, negativos, imutabilidade e determinismo.
+
+### 1.3. Constraints Procedurais e Camada Pedagógica — P2.1-C / ADR 0012
+- **`selectionConstraints.ts`:** Módulo desacoplado de predicados matemáticos puros para validação de lotes didáticos sem acoplamento à engine:
+  - `isGlobalMinNotInFirstPosition`: impede vetores onde o menor elemento já inicia na posição $0$ (o que tornaria a primeira passada trivial);
+  - `hasAtLeastOneKeepMin`: assegura ao menos uma decisão `KEEP_MIN` na varredura;
+  - `hasMultipleMinUpdatesInAtLeastOnePass`: favorece em fases maiores ao menos uma passada com múltiplas atualizações de candidato a mínimo;
+  - `generateSelectionPhaseArray(phase, seed)`: gera vetores para as 3 fases normais (F1: 4, F2: 5, F3: 6 elementos) no intervalo 1..99 sem duplicados, consumindo deterministicamente o gerador universal `generateSortingArray`;
+- **Briefing Oficial (`SELECTION_CANONICAL_BRIEFING`):** Integrado ao catálogo em `src/game/briefing/` com badge temático âmbar, 4 procedimentos operacionais (Posição Alvo, Scanner de Varredura, Decisão do Candidato e Transferência Única), destaques de telemetria e CTA `INICIAR SELECTION SORT`;
+- **Tutorial Interativo com Engine Real (`SelectionTutorialScreen.tsx` e `selectionTutorialGuide.ts`):**
+  - Consome o vetor canônico `[4, 1, 3]` operando com a `SelectionSortEngine` pura como única fonte de verdade;
+  - Botoeira contextual orientada pela fase da FSM (`INSPECT`: `[ ✦ NOVO MÍNIMO ]` e `[ = MANTER CANDIDATO ]`; `COMMIT`: `[ ⇄ TRANSFERIR MENOR CARGA ]` ou `[ ✓ CONSOLIDAR POSIÇÃO ]`);
+  - Feedback formativo não punitivo explicando a desigualdade $A[j] < A[minIndex]$;
+  - Animação de transferência executada exclusivamente após a conclusão da varredura, consolidando `[1, 3, 4]`;
+  - 13 novos testes Vitest (10 de constraints e 3 de tutorial), totalizando 210 testes no projeto.
+
+### 1.4. Rigor nos Limites Matemáticos e Comparabilidade
+- **Comparações Formais:** Estritamente $n(n-1)/2$ comparações em qualquer vetor de tamanho $n$;
+- **Trocas Físicas:** **No máximo $n-1$ trocas** por execução completa (passadas com $minIndex === i$ possuem zero trocas);
+- **Comparabilidade com o Bubble Sort:**
+  - Para entradas aleatórias distintas distribuídas uniformemente, o Bubble Sort nas três fases da campanha (4, 5 e 6 elementos) possui número máximo total de 31 trocas ($6 + 10 + 15$) no pior caso e valor esperado teórico de 15,5 inversões/trocas ($3 + 5 + 7,5$), sem tratar isso como alegação empírica;
+  - O Selection Sort, por sua vez, realiza no máximo 12 trocas nas três fases ($3 + 4 + 5 = 12$) e frequentemente menos devido a passadas onde o menor elemento já ocupa a posição correta.
+
+### 1.5. Próximo Passo: Campanha Principal e Persistência (P2.1-D)
+- Implementação de `SelectionGameScreen.tsx` consumindo `generateSelectionPhaseArray` para as 3 fases;
+- Evolução da persistência em `src/game/persistence/` para o Schema v3 registrando recordes de Selection Sort;
+- Replay com pseudocódigo sincronizado de Selection Sort;
+- Integração da campanha à navegação e telas de conclusão.
 
 ---
 

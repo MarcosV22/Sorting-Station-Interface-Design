@@ -32,4 +32,7 @@ export interface ProtocolModeBriefing {
   readonly startVariant?: "primary" | "secondary" | "danger" | "ghost";
 }
 
-export type BriefingModeId = "bubble-canonical" | "bubble-early-exit";
+export type BriefingModeId =
+  | "bubble-canonical"
+  | "bubble-early-exit"
+  | "selection-canonical";

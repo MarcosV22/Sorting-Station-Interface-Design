@@ -192,6 +192,24 @@ Para garantir que o jogo não caia na armadilha de usar a mesma mecânica de per
 
 ---
 
+### 2.18. Camada Pedagógica e Diferenciação Cinestésica do Selection Sort (P2.1-A, P2.1-B, P2.1-C — ADR 0011 e ADR 0012)
+- **Princípio Epistemológico da Diferenciação Algorítmica:** A literatura em Computing Education Research (CER) identifica como equívoco frequente a confusão conceitual entre algoritmos $O(n^2)$, em especial a assimilação de Selection Sort como "uma variante de Bubble Sort que troca menos". Para mitigar esse modelo mental errôneo, o Sorting Station estabelece mecânicas e interfaces radicalmente distintas:
+  1. *Ausência de Trocas Adjacentes:* É fisicamente impossível trocar caixas vizinhas durante a varredura do Selection Sort;
+  2. *Separação Cognitiva Estrita (Inspeção vs. Movimentação):* Durante a fase `INSPECT`, o scanner percorre a partição desordenada avaliando $A[j] < A[minIndex]$. O operador decide entre `[ ✦ NOVO MÍNIMO ]` e `[ = MANTER CANDIDATO ]`. Nenhuma caixa se desloca fisicamente na esteira durante essa inspeção;
+  3. *Transferência Única de Longa Distância:* A movimentação física ocorre exclusivamente na fase `COMMIT`, acionada ao término da varredura (`[ ⇄ TRANSFERIR MENOR CARGA ]` ou `[ ✓ CONSOLIDAR POSIÇÃO ]`). Isso comprova cinestesicamente que o Selection Sort realiza no máximo $n-1$ trocas físicas em toda a execução ($O(n)$ escritas em memória contra $O(n^2)$ no Bubble Sort);
+  4. *Convergência Direcionada à Esquerda:* Enquanto o Bubble Sort consolida os maiores elementos progressivamente à direita ($n-1, n-2, \dots$), o Selection Sort consolida os menores elementos progressivamente à esquerda ($0, 1, \dots$), reforçando a diferença de direção da invariante de laço.
+- **Constraints Didáticas Procedurais:** As entradas procedurais do Selection Sort são filtradas por predicados matemáticos puros para garantir valor formativo:
+  - O vetor não pode estar ordenado nem invertido;
+  - O mínimo global não pode iniciar no índice $0$ (o que tornaria a primeira passada trivial);
+  - Deve conter ao menos uma decisão `KEEP_MIN` (garantindo que o operador pratique a rejeição de candidatos espúrios);
+  - Em lotes maiores, favorece ao menos uma passada com múltiplas atualizações de `minIndex` (evitando heurísticas simplórias).
+- **Scaffolding e Tutorial sobre o Vetor Canônico `[4, 1, 3]`:** O mini-treinamento utiliza a engine real para praticar exatamente duas passadas didáticas completas:
+  - *Passada 1:* Alvo $i=0$ (valor 4); Scanner $j=1$ (valor 1 < 4 $\rightarrow$ NOVO MÍNIMO); Scanner $j=2$ (valor 3 < 1 falso $\rightarrow$ MANTER CANDIDATO); Commit com transferência entre índices 0 e 1 $\rightarrow$ `[1, 4, 3]`;
+  - *Passada 2:* Alvo $i=1$ (valor 4); Scanner $j=2$ (valor 3 < 4 $\rightarrow$ NOVO MÍNIMO); Commit com transferência entre índices 1 e 2 $\rightarrow$ `[1, 3, 4]`, concluindo a ordenação.
+- **Ressalva Epistemológica:** O impacto da separação bimodal (INSPECT vs COMMIT) na retenção da complexidade de transferências do Selection Sort constitui hipótese pedagógica a ser mensurada em intervenções de campo.
+
+---
+
 ## 3. O que Podemos Afirmar no Artigo Acadêmico Hoje
 
 Com base exclusivamente nos fatos implementados e no código auditado do repositório, o artigo científico pode atestar legitimamente os seguintes pontos em suas seções de **Introdução, Arquitetura e Desenvolvimento**:

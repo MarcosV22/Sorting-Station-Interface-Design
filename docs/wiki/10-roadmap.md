@@ -238,12 +238,12 @@ O objetivo central do nível P0 é converter o atual "puzzle de trocas livres" e
 ---
 
 ### P2.1. Protocolo Selection Sort: "Scanner de Carga Mínima"
-- **Objetivo:** Criar a engine e a tela do Selection Sort. O jogador não compara vizinhos: ele move um sensor pela partição desordenada, identifica o menor elemento e realiza uma única troca de longa distância para colocá-lo no início da esteira.
-- **Valor para o Aluno:** Compreensão da estratégia gulosa e da drástica redução no número de trocas em relação ao Bubble Sort.
-- **Dependências:** P0.1, [`02-system-architecture.md`](./02-system-architecture.md).
-- **Risco:** Reutilização indevida de componentes do Bubble Sort que quebrem a metáfora do scanner.
-- **Critério de Aceite:** A interface impede trocas adjacentes e exige a seleção do mínimo global antes da transferência para a partição ordenada.
-- **Status:** `FUTURO`.
+- **Objetivo:** Criar a engine, interface, tutorial interativo, briefing, geração procedural com constraints, pseudocódigo e campanha do Selection Sort. O jogador não compara vizinhos: ele move um sensor pela partição desordenada, identifica o menor elemento provisório e realiza uma única transferência de longa distância ao término da passada para consolidar o início da esteira.
+- **Valor para o Aluno:** Compreensão da estratégia seletiva gulosa, da separação rigorosa entre inspeção cognitiva e movimentação física e da drástica redução no número de trocas em relação ao Bubble Sort ($O(n)$ trocas vs $O(n^2)$).
+- **Dependências:** P0.1, [`02-system-architecture.md`](./02-system-architecture.md), [`docs/adr/0011-selection-sort-engine-and-fsm.md`](../adr/0011-selection-sort-engine-and-fsm.md), [`docs/adr/0012-selection-sort-pedagogical-layer-and-interactive-tutorial.md`](../adr/0012-selection-sort-pedagogical-layer-and-interactive-tutorial.md).
+- **Risco:** Reutilização indevida de componentes do Bubble Sort que quebrem a metáfora do scanner ou precipitação na exposição de campanha sem persistência.
+- **Critério de Aceite:** A interface impede trocas adjacentes; FSM bimodal `INSPECT` / `COMMIT` com engine pura e imutável; constraints procedurais desacopladas com predicados puros para fases de 4, 5 e 6 elementos; briefing oficial no catálogo sem duplicação de JSX; tutorial interativo com engine real sobre `[4, 1, 3]`; navegação segura na HomeScreen; 210 testes Vitest passando 100% verde.
+- **Status:** `EM ANDAMENTO` (Design pedagógico concluído em P2.1-A; Domínio puro e FSM concluídos em P2.1-B via ADR 0011; Constraints procedurais, briefing e tutorial interativo concluídos em P2.1-C via ADR 0012; Próximo passo: P2.1-D com campanha de 3 fases, persistência Schema v3 e telas finais de Selection).
 
 ---
 

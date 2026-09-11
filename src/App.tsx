@@ -6,6 +6,7 @@ import ResultScreen from "./screens/ResultScreen";
 import CampaignCompleteScreen from "./screens/CampaignCompleteScreen";
 import ReplayScreen from "./screens/ReplayScreen";
 import ProtocolModeBriefingScreen from "./screens/ProtocolModeBriefingScreen";
+import SelectionTutorialScreen from "./screens/SelectionTutorialScreen";
 import { PhaseResult } from "./game/campaign/campaignSummary";
 import {
   loadGameProgress,
@@ -24,13 +25,14 @@ import {
   BUBBLE_CAMPAIGN_PHASE_LENGTHS,
   type SeedInput,
 } from "./game/generation";
-import { getBriefingForGameMode } from "./game/briefing";
+import { getBriefingForMode, type BriefingModeId } from "./game/briefing";
 import type { PhaseCompleteData } from "./screens/GameScreen";
 import type { StepRecord } from "./game/sorting/types";
 
 type Screen =
   | "home"
   | "tutorial"
+  | "selection-tutorial"
   | "briefing"
   | "game"
   | "result"
@@ -62,6 +64,8 @@ export default function App() {
     loadGameProgress(undefined, TOTAL_PHASES)
   );
   const [gameMode, setGameMode] = useState<GameMode>("CAMPAIGN");
+  const [briefingModeId, setBriefingModeId] =
+    useState<BriefingModeId>("bubble-canonical");
   const [challengeScenarioIndex, setChallengeScenarioIndex] = useState<number>(0);
   const [screen, setScreen] = useState<Screen>("home");
   const [briefingReturnScreen, setBriefingReturnScreen] =
@@ -163,18 +167,31 @@ export default function App() {
 
   const handleSelectCampaign = () => {
     setGameMode("CAMPAIGN");
+    setBriefingModeId("bubble-canonical");
     setBriefingReturnScreen("home");
     setScreen("briefing");
   };
 
   const handleSelectChallenge = (source: "home" | "campaign-complete" = "home") => {
     setGameMode("CHALLENGE");
+    setBriefingModeId("bubble-early-exit");
     setChallengeScenarioIndex(0);
     setBriefingReturnScreen(source);
     setScreen("briefing");
   };
 
+  const handleSelectSelection = () => {
+    setBriefingModeId("selection-canonical");
+    setBriefingReturnScreen("home");
+    setScreen("briefing");
+  };
+
   const handleBriefingStart = () => {
+    if (briefingModeId === "selection-canonical") {
+      setScreen("selection-tutorial");
+      return;
+    }
+
     if (gameMode === "CAMPAIGN") {
       // A geração procedural da seed e do lote só ocorre no momento do clique no CTA do briefing
       const gen = generateBubblePhaseArray(1);
@@ -194,6 +211,7 @@ export default function App() {
 
   const handleReturnHome = () => {
     setGameMode("CAMPAIGN");
+    setBriefingModeId("bubble-canonical");
     setScreen("home");
     setPhase(1);
     setResult(null);
@@ -202,6 +220,7 @@ export default function App() {
 
   const handleRestartProtocol = () => {
     setGameMode("CAMPAIGN");
+    setBriefingModeId("bubble-canonical");
     setBriefingReturnScreen("campaign-complete");
     setScreen("briefing");
   };
@@ -232,11 +251,12 @@ export default function App() {
           onHowToPlay={() => setScreen("tutorial")}
           isChallengeUnlocked={isChallengeUnlocked}
           onStartChallenge={() => handleSelectChallenge("home")}
+          onStartSelection={handleSelectSelection}
         />
       )}
       {screen === "briefing" && (
         <ProtocolModeBriefingScreen
-          briefing={getBriefingForGameMode(gameMode)}
+          briefing={getBriefingForMode(briefingModeId)}
           onStart={handleBriefingStart}
           onBack={() => setScreen(briefingReturnScreen)}
         />
@@ -244,6 +264,12 @@ export default function App() {
       {screen === "tutorial" && (
         <TutorialScreen
           onUnderstood={handleTutorialUnderstood}
+          onBack={() => setScreen("home")}
+        />
+      )}
+      {screen === "selection-tutorial" && (
+        <SelectionTutorialScreen
+          onComplete={() => setScreen("home")}
           onBack={() => setScreen("home")}
         />
       )}

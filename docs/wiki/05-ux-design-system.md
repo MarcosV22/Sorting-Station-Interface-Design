@@ -128,25 +128,40 @@ Oscila suavemente a opacidade da borda entre $0.4$ e $1.0$ e expande o brilho di
 
 ### 5.1. `NumberedBox` ([`src/components/NumberedBox.tsx`](../../src/components/NumberedBox.tsx))
 
-A caixa possui cinco estados visuais claramente distintos:
+A caixa possui estados visuais e papéis semânticos multi-algoritmo claramente distintos (`role?: BoxRole`, P2.1-C / ADR 0012):
 
 ```text
 [ PADRÃO ]                [ SELECIONADA ]            [ DEFINITIVA (OK) ]
 ┌────────────────┐        ┌────────────────┐        ┌────────────────┐
-│#1          PKG │        │#1          SEL │        │#1           OK │
+│#1          PKG │        │#1          PAR │        │#1           OK │
 │                │        │                │        │                │
 │       5        │        │       5        │        │       1        │
 │                │        │                │        │                │
 └────────────────┘        └────────────────┘        └────────────────┘
-Borda ciano/40            Borda âmbar pulsante      Borda esmeralda
-Fundo card blue           Fundo âmbar translúcido   Fundo esmeralda translúcido
+Borda ciano/40            Borda ciano pulsante      Borda esmeralda
+Fundo card blue           Fundo ciano escuro        Fundo esmeralda translúcido
+
+[ ALVO (i) ]              [ MÍNIMO (minIndex) ]     [ SCANNER (j) ]
+┌────────────────┐        ┌────────────────┐        ┌────────────────┐
+│#1         ALVO │        │#2          MÍN │        │#3         SCAN │
+│                │        │                │        │                │
+│       4        │        │       1        │        │       3        │
+│                │        │                │        │                │
+└────────────────┘        └────────────────┘        └────────────────┘
+Borda âmbar               Borda púrpura             Borda ciano com pulso
+Fundo âmbar translúcido   Fundo púrpura translúcido Fundo ciano translúcido
 ```
 
-1. **Estado Padrão (Neutro na Esteira):** Borda ciano translúcida (`border-cyan-500/40`), fundo `#0d1635`, badge superior direito `PKG`.
-2. **Estado Selecionado (`selected={true}`):** Borda âmbar brilhante (`border-amber-400`), fundo `bg-amber-950/40`, badge superior direito `SEL`, animação `animate-pulse-border`.
-3. **Estado Ordenado/Definitivo (`sorted={true}`):** Borda esmeralda (`border-emerald-400`), fundo `bg-emerald-950/30`, badge superior direito `OK` com texto verde luminoso.
-4. **Estado Desabilitado (`disabled={true}`):** Redução de opacidade (`opacity-40`) e cursor `not-allowed`.
-5. **Estado em Animação (`animating="left" | "right"`):** Aplicação de `animate-swap-left` ou `animate-swap-right` com elevação na camada (`z-20`).
+1. **Estado Padrão (`role="default"`):** Borda azul escuro (`border-[#2a4a9e]/80`), fundo `#0f1e4a`, badge superior direito `PKG`.
+2. **Par Ativo (`role="pair"` ou `selected={true}`):** Borda ciano brilhante (`border-[#00f5ff]`), fundo `bg-cyan-950`, badge `PAR`, animação `animate-pulse-border`.
+3. **Posição Alvo (`role="target"`):** Posição $i$ da rodada do Selection Sort. Borda âmbar (`border-amber-400`), fundo `bg-amber-950/40`, badge `ALVO`.
+4. **Candidato a Mínimo (`role="min"`):** Menor elemento identificado até agora ($minIndex$). Borda púrpura (`border-purple-400`), fundo `bg-purple-950/40`, badge `MÍN`.
+5. **Alvo Coincidente com Mínimo (`role="target-min"`):** Quando $minIndex = i$. Borda âmbar destacada com anel púrpura, badge `ALVO • MÍN`.
+6. **Scanner em Inspeção (`role="scan"`):** Elemento sob escrutínio da varredura ($j$). Borda ciano com pulso (`border-cyan-400 animate-pulse`), badge `SCAN`.
+7. **Scanner no Novo Mínimo (`role="scan-min"`):** Momento em que o scanner coincide com a atualização de candidato. Borda ciano/púrpura com pulso duplo, badge `MÍN • SCAN`.
+8. **Estado Ordenado/Definitivo (`role="sorted"` ou `sorted={true}`):** Borda esmeralda (`border-emerald-500/30`), fundo `bg-emerald-950`, badge `OK` com texto verde luminoso.
+9. **Estado Desabilitado (`disabled={true}`):** Redução de opacidade (`opacity-40`) e cursor `not-allowed`.
+10. **Estado em Animação (`animating="left" | "right"`):** Aplicação de `animate-swap-left` ou `animate-swap-right` com elevação na camada (`z-20`). Executada no Bubble Sort durante a varredura e no Selection Sort estritamente na confirmação da transferência final.
 
 ### 5.2. `GameButton` ([`src/components/GameButton.tsx`](../../src/components/GameButton.tsx))
 
@@ -221,12 +236,18 @@ Para garantir uniformidade e consistência narrativa em todas as mensagens, bot�
 
 | Conceito do Jogo | Termo Obrigatório Recomendado | Termos Proibidos / Evitar | Justificativa Pedagógica e Diegética |
 | :--- | :--- | :--- | :--- |
-| **O Algoritmo** | `Protocolo` (ex.: *Protocolo Bubble*) | Método, Rotina, Função | Reforça a narrativa de procedimento operacional homologado |
+| **O Algoritmo** | `Protocolo` (ex.: *Protocolo Bubble*, *Protocolo Selection*) | Método, Rotina, Função | Reforça a narrativa de procedimento operacional homologado |
 | **O Vetor / Dados** | `Cargas`, `Pacotes` ou `Caixas` | Array, Vetor, Itens | Conecta a abstração matemática a objetos físicos manipuláveis |
 | **A Rodada de Jogo** | `Fase` ou `Turno` | Nível, Level, Missão | Mantém consistência com o vocabulário da estação |
-| **A Ação de Início** | `Iniciar Turno` | Jogar, Play, Start | Linguagem imersiva da estação de triagem |
-| **O Passo de Troca** | `Trocar` / `Permutar` | Inverter, Mover, Swapar | Termo em português vernáculo claro e preciso |
-| **O Passo de Manter** | `Manter Ordem` | Ignorar, Pular, Passar | Enfatiza que não trocar é uma decisão deliberada do algoritmo |
+| **A Ação de Início** | `Iniciar Turno` / `Iniciar Selection Sort` | Jogar, Play, Start | Linguagem imersiva da estação de triagem |
+| **O Passo de Troca (Bubble)** | `Trocar` / `Permutar` | Inverter, Mover, Swapar | Termo em português vernáculo claro e preciso |
+| **O Passo de Manter (Bubble)** | `Manter Ordem` | Ignorar, Pular, Passar | Enfatiza que não trocar é uma decisão deliberada do algoritmo |
+| **A Varredura (Selection)** | `Scanner` / `Varredura` | Passeio, Busca, Loop | Enfatiza inspeção sem movimentação física das caixas |
+| **O Menor Provisório (Selection)** | `Candidato a Mínimo` | Menorzinho, Atual, Temp | Deixa explícito que o valor pode ser superado adiante |
+| **Atualização de Mínimo (Selection)** | `Novo Mínimo` | Trocar, Atualizar, Salvar | Diferencia a decisão lógica da movimentação física |
+| **Preservação de Mínimo (Selection)** | `Manter Candidato` | Ignorar, Pular, Descartar | Reafirma que a decisão de não alterar é consciente |
+| **Troca de Fechamento (Selection)** | `Transferir Menor Carga` | Trocar logo, Mover, Jogar | Deixa evidente que a transferência ocorre no fim da varredura |
+| **Fechamento sem Troca (Selection)** | `Consolidar Posição` | Nada a fazer, Pular, Ok | Formaliza que o elemento já estava na posição correta |
 | **O Elemento Fixado** | `Ordenado` ou `Fixado` | Bloqueado, Travado, Seguro | Indica matematicamente que a posição canônica foi atingida |
 | **A Verificação Local** | `Comparar Vizinhos` | Testar, Checar, Olhar | Reforça a restrição da adjacência física do Bubble Sort |
 | **As Métricas** | `Comparações` e `Trocas` | Clicks, Pontos, Movimentos | Alinha o vocabulário diretamente com a análise de complexidade |
